@@ -4,7 +4,7 @@ import { AiOutlineHome } from 'react-icons/ai';
 import '../styles/AbrirChamado.css';
 
 // --- IMPORTAÇÕES DO FIREBASE ---
-import { db } from "../api/firebase"; // Verifique se o caminho do seu arquivo de config está correto
+import { db, auth } from "../api/firebase"; // ✅ Importado o 'auth' para pegar o ID do usuário
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const UNIDADES = [
@@ -39,22 +39,31 @@ const AbrirChamado = () => {
         setIsLoading(true);
         setError(null);
 
+        // ✅ Pega o usuário logado no momento do envio
+        const user = auth.currentUser;
+
+        if (!user) {
+            setError('Você precisa estar logado para abrir um chamado.');
+            setIsLoading(false);
+            return;
+        }
+
         try {
-            // 1. Referência da coleção no Firestore
             const chamadosRef = collection(db, 'chamados');
 
-            // 2. Envio dos dados com Data e Hora do Servidor
+            // 2. Envio dos dados incluindo o userId para permitir a filtragem na consulta
             await addDoc(chamadosRef, {
+                userId: user.uid,            // 👈 VITAL: Salva o ID do dono do chamado
+                emailSolicitante: user.email, // Útil para controle administrativo
                 nome: formData.nome,
                 unidade: formData.unidade,
                 setor: formData.setor,
                 descricao: formData.descricao,
                 prioridade: formData.prioridade,
-                status: 'aberto', // Status inicial padrão
-                criadoEm: serverTimestamp(), // SALVA DATA E HORA EXATA
+                status: 'aberto',
+                criadoEm: serverTimestamp(),
             });
 
-            // Lógica de sucesso visual
             setIsSubmitted(true);
             setFormData({
                 nome: '',
@@ -64,7 +73,6 @@ const AbrirChamado = () => {
                 prioridade: 'média'
             });
 
-            // Espera 2 segundos para o usuário ler a mensagem de sucesso e redireciona
             setTimeout(() => {
                 navigate('/');
             }, 2000);

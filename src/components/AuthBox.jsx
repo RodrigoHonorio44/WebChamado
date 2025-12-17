@@ -27,7 +27,6 @@ const AuthBox = () => {
         try {
             await sendPasswordResetEmail(auth, email);
             setMessage("✅ Link enviado! Verifique seu e-mail para cadastrar a nova senha.");
-            // Opcional: Voltar para o login após alguns segundos
             setTimeout(() => setView('login'), 6000);
         } catch (error) {
             setMessage("❌ Erro ao enviar link. Verifique se o e-mail está correto.");
@@ -41,7 +40,8 @@ const AuthBox = () => {
         setIsLoading(true);
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            navigate('/meus-chamados');
+            // ➡️ ATUALIZADO: Redireciona para a Home em vez de ir direto para chamados
+            navigate('/');
         } catch (error) {
             setMessage("❌ Erro: E-mail ou senha incorretos.");
         } finally {
@@ -54,7 +54,8 @@ const AuthBox = () => {
         return (
             <div className="auth-box">
                 <SignUpForm
-                    onRegisterSuccess={() => navigate('/abrir-chamado')}
+                    // ➡️ ATUALIZADO: Redireciona para a Home após cadastro
+                    onRegisterSuccess={() => navigate('/')}
                     onBackToLogin={() => setView('login')}
                 />
             </div>

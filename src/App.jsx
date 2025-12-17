@@ -1,35 +1,28 @@
 // src/App.jsx
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-// 🛑 NOVAS IMPORTAÇÕES NECESSÁRIAS
-import { AuthProvider } from './contexts/AuthContext'; // 1. O Provedor de Contexto
-import ProtectedRoute from './components/ProtectedRoute'; // 2. O Componente de Proteção de Rotas
+// 🛑 IMPORTAÇÕES DE CONTEXTO E PROTEÇÃO
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
-// Importe as páginas que você vai usar
+// IMPORTAÇÃO DAS PÁGINAS
 import Home from './pages/Home';
 import AbrirChamado from './pages/AbrirChamado';
-// Importe ou crie esta página se ainda não existir
-import MeusChamados from './pages/AbrirChamado';
-
-// Importe os estilos globais (opcional, mas recomendado)
-// import './styles/Global.css'; 
+// ✅ AGORA SIM CORRIGIDO: Importando do arquivo de lista, não do de abertura
+import MeusChamados from './pages/MeusChamados';
 
 const App = () => {
   return (
-    // O BrowserRouter habilita a navegação por rota
     <Router>
-      {/* 🛑 PASSO CRÍTICO: Envolver toda a aplicação com o AuthProvider 🛑 */}
       <AuthProvider>
         <div className="App">
-          {/* O componente Routes gerencia qual componente será renderizado */}
           <Routes>
 
-            {/* Rota Pública: Exibe a página Home (contém Login) */}
+            {/* Rota Pública: Home (Login/Hero) */}
             <Route path="/" element={<Home />} />
 
-            {/* Rota Protegida: Exibe a página AbrirChamado SOMENTE se logado */}
+            {/* Rota Protegida: Formulário de Abertura */}
             <Route
               path="/abrir-chamado"
               element={
@@ -39,7 +32,7 @@ const App = () => {
               }
             />
 
-            {/* Rota Protegida: Acompanhar Chamados SOMENTE se logado */}
+            {/* Rota Protegida: Lista de Chamados (Acompanhamento) */}
             <Route
               path="/meus-chamados"
               element={
@@ -49,8 +42,8 @@ const App = () => {
               }
             />
 
-            {/* Opcional: Rota para páginas não encontradas (404) */}
-            <Route path="*" element={<div>404 - Página Não Encontrada</div>} />
+            {/* Rota para páginas não encontradas */}
+            <Route path="*" element={<div style={{ padding: '50px', textAlign: 'center' }}><h2>404 - Página Não Encontrada</h2></div>} />
 
           </Routes>
         </div>
