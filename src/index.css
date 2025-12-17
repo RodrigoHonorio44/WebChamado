@@ -1,0 +1,41 @@
+/* src/index.css (ou Global.css) */
+
+/* 1. RESET BÁSICO */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  /* Fundamental para responsividade */
+}
+
+/* 2. VARIÁVEIS GLOBAIS (Tema) */
+:root {
+  --cor-principal: #3498db;
+  /* Azul */
+  --cor-secundaria: #2ecc71;
+  /* Verde */
+  --cor-texto-escuro: #333333;
+  --cor-fundo: #f4f7fa;
+  --sombra-padrao: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* 3. ESTILOS DO CORPO E FONTES */
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: var(--cor-fundo);
+  color: var(--cor-texto-escuro);
+  line-height: 1.6;
+}
+
+/* 4. REGRAS PARA LINKS GERAIS */
+a {
+  text-decoration: none;
+  color: var(--cor-principal);
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Seus componentes específicos (Home.css, AbrirChamado.css) */
+/* devem ser importados dentro dos próprios arquivos JSX, como já fizemos. */

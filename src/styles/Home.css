@@ -1,0 +1,206 @@
+/* src/styles/Home.css (ATUALIZADO E COMPLETO) */
+
+/* --- Configuração Geral para Links --- */
+a {
+    text-decoration: none;
+}
+
+/* --- Container Principal --- */
+.home-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    background-color: #f4f7fa;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    position: relative;
+    /* Necessário para o posicionamento do header */
+}
+
+/* ------------------------------------------- */
+/* --- NOVO: HEADER DE USUÁRIO (TOPO) --- */
+/* ------------------------------------------- */
+.user-header {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    /* Alinha e-mail à direita */
+    padding: 20px 50px;
+    box-sizing: border-box;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    padding: 8px 18px;
+    border-radius: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e0e6ed;
+}
+
+.user-display-name {
+    font-size: 0.9rem;
+    color: #444;
+    font-weight: 500;
+}
+
+.logout-text-btn {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    /* Vermelho para destaque de saída */
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding-left: 5px;
+    transition: color 0.2s;
+}
+
+.logout-text-btn:hover {
+    color: #c0392b;
+    text-decoration: underline;
+}
+
+/* ------------------------------------------- */
+/* --- HERO SECTION --- */
+/* ------------------------------------------- */
+.hero-section {
+    width: 90%;
+    max-width: 1200px;
+    margin: 5px auto 40px auto;
+    padding: 40px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: flex-start;
+    gap: 50px;
+}
+
+.hero-content {
+    flex: 1;
+    max-width: 50%;
+}
+
+.hero-content h1 {
+    font-size: 2.7em;
+    color: #3490dc;
+    margin-bottom: 15px;
+}
+
+.hero-content p {
+    font-size: 1.1em;
+    line-height: 1.6;
+    color: #555;
+    margin-bottom: 30px;
+}
+
+.welcome-message {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 1.2em;
+}
+
+/* Container dos Botões Principais */
+.hero-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.hero-button {
+    padding: 12px 25px;
+    border-radius: 25px;
+    font-weight: bold;
+    transition: background-color 0.3s, transform 0.2s;
+    font-size: 1em;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    color: white;
+}
+
+.hero-button:hover {
+    transform: translateY(-2px);
+}
+
+.primary-cta {
+    background-color: #38c172;
+    /* Verde */
+}
+
+.primary-cta:hover {
+    background-color: #2cb366;
+}
+
+.secondary-cta {
+    background-color: #3490dc;
+    /* Azul */
+}
+
+.secondary-cta:hover {
+    background-color: #2a7ebc;
+}
+
+/* Coluna Direita: Imagem */
+.hero-image {
+    flex: 1;
+    max-width: 50%;
+}
+
+.hero-image img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+/* --- Footer --- */
+.home-footer {
+    width: 100%;
+    text-align: center;
+    padding: 20px 0;
+    margin-top: auto;
+    /* Garante que o footer fique no fim */
+    color: #999;
+    font-size: 0.85em;
+}
+
+/* ------------------------------------------- */
+/* --- Responsividade --- */
+/* ------------------------------------------- */
+@media (max-width: 768px) {
+    .user-header {
+        padding: 15px 20px;
+        justify-content: center;
+        /* Centraliza o e-mail no mobile */
+    }
+
+    .hero-section {
+        flex-direction: column-reverse;
+        padding: 20px;
+        margin-top: 10px;
+    }
+
+    .hero-content,
+    .hero-image {
+        max-width: 100%;
+        text-align: center;
+    }
+
+    .hero-image {
+        margin-bottom: 25px;
+    }
+
+    .hero-actions {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .hero-button {
+        justify-content: center;
+        width: 100%;
+    }
+}

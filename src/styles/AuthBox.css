@@ -1,0 +1,142 @@
+/* ==================================== */
+/* src/styles/AuthBox.css */
+/* Estilos Específicos do Componente AuthBox */
+/* ==================================== */
+
+.auth-box {
+    background-color: #f0f7ff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+    margin-bottom: 20px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+}
+
+.auth-box h3 {
+    color: #007bff;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+.auth-instruction {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #555;
+    font-size: 0.9rem;
+}
+
+.auth-input {
+    border: 1px solid #ced4da;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.auth-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+/* --- LINK DE RECUPERAÇÃO PROFISSIONAL --- */
+.forgot-password-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: -5px;
+    margin-bottom: 15px;
+    padding-right: 5px;
+}
+
+.forgot-password-link {
+    background: none;
+    border: none;
+    color: #6c757d;
+    /* Cinza sóbrio para um ar mais profissional */
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.forgot-password-link:hover {
+    text-decoration: underline;
+    color: #007bff;
+    /* Destaca em azul apenas no hover */
+}
+
+/* --- BOTÕES E AÇÕES --- */
+.auth-actions-visual {
+    display: flex;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.auth-button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s, opacity 0.3s;
+}
+
+.login-btn {
+    background-color: #007bff;
+}
+
+.login-btn:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+.register-btn {
+    background-color: #28a745;
+}
+
+.register-btn:hover:not(:disabled) {
+    background-color: #1e7e34;
+}
+
+/* Botão Voltar (Usado na tela de Esqueci Senha) */
+.back-btn {
+    background-color: #6c757d;
+}
+
+.back-btn:hover:not(:disabled) {
+    background-color: #5a6268;
+}
+
+.auth-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* --- MENSAGENS DE FEEDBACK --- */
+.auth-message {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 4px;
+    background-color: #fff3cd;
+    color: #856404;
+    font-size: 0.9rem;
+    text-align: center;
+    border: 1px solid #ffeeba;
+}
+
+.auth-message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
