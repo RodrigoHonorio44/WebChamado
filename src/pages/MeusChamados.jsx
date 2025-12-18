@@ -29,7 +29,6 @@ const MeusChamados = () => {
                     listaChamados.push({ id: doc.id, ...doc.data() });
                 });
 
-                // Ordenação manual (Mais recentes primeiro)
                 listaChamados.sort((a, b) => {
                     const dataA = a.criadoEm?.seconds || 0;
                     const dataB = b.criadoEm?.seconds || 0;
@@ -66,10 +65,9 @@ const MeusChamados = () => {
                     <table className="chamados-table">
                         <thead>
                             <tr>
-                                {/* ✅ Alterado de Protocolo para OS */}
                                 <th>Nº OS</th>
                                 <th>Unidade</th>
-                                <th>Descrição</th>
+                                <th>Descrição / Parecer</th>
                                 <th>Prioridade</th>
                                 <th>Status</th>
                                 <th>Data/Hora</th>
@@ -78,12 +76,19 @@ const MeusChamados = () => {
                         <tbody>
                             {chamados.map((item) => (
                                 <tr key={item.id}>
-                                    {/* ✅ Exibindo o novo campo numeroOs gerado */}
-                                    <td className="os-cell">
-                                        {item.numeroOs || 'S/N'}
-                                    </td>
+                                    <td className="os-cell">{item.numeroOs || 'S/N'}</td>
                                     <td>{item.unidade}</td>
-                                    <td className="desc-cell">{item.descricao}</td>
+                                    <td className="desc-cell">
+                                        <div className="original-desc">{item.descricao}</div>
+
+                                        {/* ✅ EXIBIÇÃO DO FEEDBACK DO ANALISTA */}
+                                        {item.status === 'fechado' && item.feedbackAnalista && (
+                                            <div className="analista-feedback-box">
+                                                <strong>Parecer Técnico:</strong>
+                                                <p>{item.feedbackAnalista}</p>
+                                            </div>
+                                        )}
+                                    </td>
                                     <td>
                                         <span className={`prioridade-tag ${item.prioridade?.toLowerCase()}`}>
                                             {item.prioridade}

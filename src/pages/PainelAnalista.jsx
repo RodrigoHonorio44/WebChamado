@@ -2,16 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { db } from '../api/firebase';
 import { collection, query, getDocs, doc, updateDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
-import '../styles/MeusChamados.css'; // Reaproveitando o CSS da tabela
+import '../styles/MeusChamados.css';
 
 const PainelAnalista = () => {
     const [chamados, setChamados] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const [chamadoParaFinalizar, setChamadoParaFinalizar] = useState(null);
+    const [parecerTecnico, setParecerTecnico] = useState("");
+
     const buscarTodosChamados = async () => {
         setLoading(true);
         try {
-            // O Analista vê TODOS os chamados do sistema, ordenados por data
             const q = query(collection(db, "chamados"), orderBy("criadoEm", "desc"));
             const querySnapshot = await getDocs(q);
             const lista = [];
@@ -30,19 +32,26 @@ const PainelAnalista = () => {
         buscarTodosChamados();
     }, []);
 
-    const finalizarChamado = async (id) => {
-        if (!window.confirm("Deseja realmente finalizar este chamado?")) return;
+    const confirmarFinalizacao = async () => {
+        if (!parecerTecnico.trim()) {
+            alert("Por favor, descreva o que foi feito no chamado.");
+            return;
+        }
 
         try {
-            const chamadoRef = doc(db, "chamados", id);
+            const chamadoRef = doc(db, "chamados", chamadoParaFinalizar);
             await updateDoc(chamadoRef, {
-                status: 'fechado', // Ficará vermelho no CSS
+                status: 'fechado',
+                feedbackAnalista: parecerTecnico,
                 finalizadoEm: serverTimestamp()
             });
-            alert("Chamado finalizado com sucesso!");
-            buscarTodosChamados(); // Atualiza a lista
+
+            alert("Chamado concluído com sucesso!");
+            setChamadoParaFinalizar(null);
+            setParecerTecnico("");
+            buscarTodosChamados();
         } catch (error) {
-            alert("Erro ao finalizar chamado.");
+            alert("Erro ao concluir chamado.");
         }
     };
 
@@ -86,22 +95,36 @@ const PainelAnalista = () => {
                                     </td>
                                     <td>
                                         {item.status === 'aberto' && (
-                                            <button
-                                                onClick={() => finalizarChamado(item.id)}
-                                                style={{
-                                                    backgroundColor: '#dc2626',
-                                                    color: 'white',
-                                                    border: 'none',
-                                                    padding: '5px 10px',
-                                                    borderRadius: '4px',
-                                                    cursor: 'pointer',
-                                                    fontWeight: 'bold'
-                                                }}
-                                            >
-                                                Finalizar
-                                            </button>
+                                            <div className="analista-actions-cell">
+                                                {chamadoParaFinalizar === item.id ? (
+                                                    <div className="feedback-form-container">
+                                                        <textarea
+                                                            placeholder="Descreva detalhadamente o que foi feito para solucionar o problema..."
+                                                            value={parecerTecnico}
+                                                            onChange={(e) => setParecerTecnico(e.target.value)}
+                                                            className="feedback-textarea-large"
+                                                        />
+                                                        <div className="feedback-buttons-group">
+                                                            <button onClick={confirmarFinalizacao} className="btn-save">Finalizar Chamado</button>
+                                                            <button onClick={() => setChamadoParaFinalizar(null)} className="btn-cancel">Cancelar</button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => setChamadoParaFinalizar(item.id)}
+                                                        className="btn-concluir-main"
+                                                    >
+                                                        Concluir
+                                                    </button>
+                                                )}
+                                            </div>
                                         )}
-                                        {item.status === 'fechado' && <small>Concluído</small>}
+                                        {item.status === 'fechado' && (
+                                            <div className="feedback-view">
+                                                <strong>Resolvido:</strong>
+                                                <p>{item.feedbackAnalista}</p>
+                                            </div>
+                                        )}
                                     </td>
                                 </tr>
                             ))}

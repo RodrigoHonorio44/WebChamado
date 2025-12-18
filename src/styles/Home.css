@@ -90,6 +90,11 @@ a:visited {
     color: #1e3a8a;
     margin-bottom: 10px;
     line-height: 1.2;
+    text-align: center;
+}
+
+.hero-content p {
+    text-align: center;
 }
 
 .subtitle {
