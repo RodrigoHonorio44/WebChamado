@@ -11,14 +11,12 @@ const MeusChamados = () => {
 
     useEffect(() => {
         const buscarChamados = async () => {
-            // Verifica se o usuário está logado
             if (!user) {
                 setLoading(false);
                 return;
             }
 
             try {
-                // 1. Consulta apenas pelo userId (Sem orderBy para evitar erro de índice)
                 const q = query(
                     collection(db, "chamados"),
                     where("userId", "==", user.uid)
@@ -31,8 +29,7 @@ const MeusChamados = () => {
                     listaChamados.push({ id: doc.id, ...doc.data() });
                 });
 
-                // 2. Ordenação manual via JavaScript (Mais Recentes Primeiro)
-                // Isso resolve o problema de a lista aparecer vazia por falta de índice
+                // Ordenação manual (Mais recentes primeiro)
                 listaChamados.sort((a, b) => {
                     const dataA = a.criadoEm?.seconds || 0;
                     const dataB = b.criadoEm?.seconds || 0;
@@ -61,7 +58,7 @@ const MeusChamados = () => {
                 <p className="loading-text">Carregando seus chamados...</p>
             ) : chamados.length === 0 ? (
                 <div className="no-data">
-                    <p>Nenhum chamado encontrado para seu usuário.</p>
+                    <p>Nenhum chamado encontrado.</p>
                     <Link to="/abrir-chamado" className="btn-abrir">Abrir Novo Chamado</Link>
                 </div>
             ) : (
@@ -69,28 +66,43 @@ const MeusChamados = () => {
                     <table className="chamados-table">
                         <thead>
                             <tr>
-                                <th>Protocolo</th>
+                                {/* ✅ Alterado de Protocolo para OS */}
+                                <th>Nº OS</th>
+                                <th>Unidade</th>
                                 <th>Descrição</th>
-                                <th>Setor</th>
+                                <th>Prioridade</th>
                                 <th>Status</th>
-                                <th>Data</th>
+                                <th>Data/Hora</th>
                             </tr>
                         </thead>
                         <tbody>
                             {chamados.map((item) => (
                                 <tr key={item.id}>
-                                    <td className="protocolo-cell">#{item.id.slice(0, 5).toUpperCase()}</td>
-                                    <td>{item.descricao || "Sem descrição"}</td>
-                                    <td>{item.setor}</td>
+                                    {/* ✅ Exibindo o novo campo numeroOs gerado */}
+                                    <td className="os-cell">
+                                        {item.numeroOs || 'S/N'}
+                                    </td>
+                                    <td>{item.unidade}</td>
+                                    <td className="desc-cell">{item.descricao}</td>
                                     <td>
-                                        <span className={`status-badge ${item.status?.toLowerCase() || 'pendente'}`}>
-                                            {item.status || 'Pendente'}
+                                        <span className={`prioridade-tag ${item.prioridade?.toLowerCase()}`}>
+                                            {item.prioridade}
                                         </span>
                                     </td>
                                     <td>
-                                        {item.criadoEm
-                                            ? item.criadoEm.toDate().toLocaleDateString('pt-BR')
-                                            : '--/--/----'}
+                                        <span className={`status-badge ${item.status?.toLowerCase()}`}>
+                                            {item.status}
+                                        </span>
+                                    </td>
+                                    <td className="data-hora-cell">
+                                        {item.criadoEm ? (
+                                            <>
+                                                <div>{item.criadoEm.toDate().toLocaleDateString('pt-BR')}</div>
+                                                <div className="hora-text">
+                                                    {item.criadoEm.toDate().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                                </div>
+                                            </>
+                                        ) : '--/--'}
                                     </td>
                                 </tr>
                             ))}

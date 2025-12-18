@@ -2,15 +2,18 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
-// 🛑 IMPORTAÇÕES DE CONTEXTO E PROTEÇÃO
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// IMPORTAÇÃO DAS PÁGINAS
+// PÁGINAS EXISTENTES
 import Home from './pages/Home';
 import AbrirChamado from './pages/AbrirChamado';
-// ✅ AGORA SIM CORRIGIDO: Importando do arquivo de lista, não do de abertura
 import MeusChamados from './pages/MeusChamados';
+
+// 🆕 NOVAS PÁGINAS (Crie estes arquivos na pasta pages)
+import PainelAnalista from './pages/PainelAnalista'; // Fila de chamados
+import AdminUsuarios from './pages/AdminUsuarios';   // Gerenciar analistas
+import DashboardAdm from './pages/DashboardAdm';     // Gráficos e stats
 
 const App = () => {
   return (
@@ -18,33 +21,41 @@ const App = () => {
       <AuthProvider>
         <div className="App">
           <Routes>
-
-            {/* Rota Pública: Home (Login/Hero) */}
+            {/* Rota Pública */}
             <Route path="/" element={<Home />} />
 
-            {/* Rota Protegida: Formulário de Abertura */}
-            <Route
-              path="/abrir-chamado"
-              element={
-                <ProtectedRoute>
-                  <AbrirChamado />
-                </ProtectedRoute>
-              }
-            />
+            {/* 🟢 ROTAS DO USUÁRIO COMUM */}
+            <Route path="/abrir-chamado" element={
+              <ProtectedRoute>
+                <AbrirChamado />
+              </ProtectedRoute>
+            } />
+            <Route path="/meus-chamados" element={
+              <ProtectedRoute>
+                <MeusChamados />
+              </ProtectedRoute>
+            } />
 
-            {/* Rota Protegida: Lista de Chamados (Acompanhamento) */}
-            <Route
-              path="/meus-chamados"
-              element={
-                <ProtectedRoute>
-                  <MeusChamados />
-                </ProtectedRoute>
-              }
-            />
+            {/* 🔵 ROTA DO ANALISTA (Fila Geral) */}
+            <Route path="/painel-analista" element={
+              <ProtectedRoute roleRequired="analista">
+                <PainelAnalista />
+              </ProtectedRoute>
+            } />
 
-            {/* Rota para páginas não encontradas */}
+            {/* 🔴 ROTAS DO ADM (Gestão e Dashboard) */}
+            <Route path="/admin/usuarios" element={
+              <ProtectedRoute roleRequired="adm">
+                <AdminUsuarios />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/dashboard" element={
+              <ProtectedRoute roleRequired="adm">
+                <DashboardAdm />
+              </ProtectedRoute>
+            } />
+
             <Route path="*" element={<div style={{ padding: '50px', textAlign: 'center' }}><h2>404 - Página Não Encontrada</h2></div>} />
-
           </Routes>
         </div>
       </AuthProvider>

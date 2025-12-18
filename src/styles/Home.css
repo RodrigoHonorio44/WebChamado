@@ -1,32 +1,28 @@
-/* src/styles/Home.css (ATUALIZADO E COMPLETO) */
+/* src/styles/Home.css (ATUALIZADO E SEM SUBLINHADOS) */
 
-/* --- Configuração Geral para Links --- */
-a {
-    text-decoration: none;
+/* --- Configuração Geral --- */
+a,
+a:hover,
+a:visited {
+    text-decoration: none !important;
+    /* Remove sublinhado de todos os links do portal */
 }
 
-/* --- Container Principal --- */
 .home-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0;
     background-color: #f4f7fa;
     min-height: 100vh;
-    font-family: Arial, sans-serif;
-    position: relative;
-    /* Necessário para o posicionamento do header */
+    font-family: 'Segoe UI', Roboto, Arial, sans-serif;
 }
 
-/* ------------------------------------------- */
-/* --- NOVO: HEADER DE USUÁRIO (TOPO) --- */
-/* ------------------------------------------- */
+/* --- HEADER DE USUÁRIO --- */
 .user-header {
     width: 100%;
     display: flex;
     justify-content: flex-end;
-    /* Alinha e-mail à direita */
-    padding: 20px 50px;
+    padding: 15px 50px;
     box-sizing: border-box;
 }
 
@@ -35,14 +31,21 @@ a {
     align-items: center;
     gap: 10px;
     background: white;
-    padding: 8px 18px;
+    padding: 6px 15px;
     border-radius: 30px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     border: 1px solid #e0e6ed;
 }
 
+.user-status-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #38c172;
+    border-radius: 50%;
+}
+
 .user-display-name {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: #444;
     font-weight: 500;
 }
@@ -51,156 +54,178 @@ a {
     background: none;
     border: none;
     color: #e74c3c;
-    /* Vermelho para destaque de saída */
     font-weight: bold;
     cursor: pointer;
-    font-size: 0.85rem;
-    padding-left: 5px;
+    font-size: 0.8rem;
     transition: color 0.2s;
+    text-decoration: none;
 }
 
 .logout-text-btn:hover {
     color: #c0392b;
-    text-decoration: underline;
+    text-decoration: none;
+    /* Mantém limpo no hover */
 }
 
-/* ------------------------------------------- */
 /* --- HERO SECTION --- */
-/* ------------------------------------------- */
 .hero-section {
     width: 90%;
     max-width: 1200px;
-    margin: 5px auto 40px auto;
+    margin: 10px auto;
     padding: 40px;
     background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
     display: flex;
-    align-items: flex-start;
-    gap: 50px;
+    align-items: center;
+    gap: 40px;
 }
 
 .hero-content {
-    flex: 1;
-    max-width: 50%;
+    flex: 1.2;
 }
 
 .hero-content h1 {
-    font-size: 2.7em;
-    color: #3490dc;
-    margin-bottom: 15px;
+    font-size: 2.2rem;
+    color: #1e3a8a;
+    margin-bottom: 10px;
+    line-height: 1.2;
 }
 
-.hero-content p {
-    font-size: 1.1em;
-    line-height: 1.6;
-    color: #555;
-    margin-bottom: 30px;
+.subtitle {
+    font-size: 1.1rem;
+    color: #64748b;
+    margin-bottom: 25px;
+    font-weight: 500;
 }
 
 .welcome-message {
-    color: #2c3e50;
-    margin-bottom: 20px;
-    font-size: 1.2em;
+    color: #334155;
+    margin: 25px 0 15px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
 }
 
-/* Container dos Botões Principais */
-.hero-actions {
-    display: flex;
+/* --- GRID DE CARDS --- */
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 15px;
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
-.hero-button {
-    padding: 12px 25px;
-    border-radius: 25px;
-    font-weight: bold;
-    transition: background-color 0.3s, transform 0.2s;
-    font-size: 1em;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+.action-card {
     display: flex;
     align-items: center;
-    color: white;
+    padding: 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    /* Garante remoção no card */
 }
 
-.hero-button:hover {
-    transform: translateY(-2px);
+.action-card:hover {
+    transform: translateY(-3px);
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: #3490dc;
 }
 
-.primary-cta {
-    background-color: #38c172;
-    /* Verde */
+.card-icon {
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    font-size: 1.4rem;
+    margin-right: 15px;
+    flex-shrink: 0;
 }
 
-.primary-cta:hover {
-    background-color: #2cb366;
+.card-text {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
 }
 
-.secondary-cta {
-    background-color: #3490dc;
-    /* Azul */
+.card-text strong {
+    color: #1e293b;
+    font-size: 0.95rem;
+    text-decoration: none;
+    /* Remove sublinhado do título */
 }
 
-.secondary-cta:hover {
-    background-color: #2a7ebc;
+.card-text span {
+    color: #64748b;
+    font-size: 0.75rem;
+    text-decoration: none;
+    /* Remove sublinhado da descrição */
 }
 
-/* Coluna Direita: Imagem */
+/* Cores Hover */
+.action-card.technical:hover {
+    border-color: #f59e0b;
+}
+
+.action-card.admin:hover {
+    border-color: #8b5cf6;
+}
+
+/* --- IMAGEM E FOOTER --- */
 .hero-image {
-    flex: 1;
-    max-width: 50%;
+    flex: 0.8;
 }
 
 .hero-image img {
     width: 100%;
-    height: auto;
-    border-radius: 8px;
+    border-radius: 12px;
 }
 
-/* --- Footer --- */
 .home-footer {
     width: 100%;
     text-align: center;
-    padding: 20px 0;
-    margin-top: auto;
-    /* Garante que o footer fique no fim */
-    color: #999;
-    font-size: 0.85em;
+    padding: 30px 0;
+    color: #94a3b8;
+    font-size: 0.8rem;
 }
 
-/* ------------------------------------------- */
-/* --- Responsividade --- */
-/* ------------------------------------------- */
-@media (max-width: 768px) {
-    .user-header {
-        padding: 15px 20px;
-        justify-content: center;
-        /* Centraliza o e-mail no mobile */
-    }
-
+/* --- RESPONSIVIDADE --- */
+@media (max-width: 992px) {
     .hero-section {
         flex-direction: column-reverse;
-        padding: 20px;
-        margin-top: 10px;
+        text-align: center;
+        padding: 30px 20px;
     }
 
-    .hero-content,
-    .hero-image {
+    .hero-content {
         max-width: 100%;
+    }
+
+    .hero-image {
+        max-width: 300px;
+    }
+
+    .action-grid {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .user-header {
+        padding: 10px;
+        justify-content: center;
+    }
+
+    .action-card {
+        flex-direction: column;
         text-align: center;
     }
 
-    .hero-image {
-        margin-bottom: 25px;
-    }
-
-    .hero-actions {
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .hero-button {
-        justify-content: center;
-        width: 100%;
+    .card-icon {
+        margin-right: 0;
+        margin-bottom: 10px;
     }
 }

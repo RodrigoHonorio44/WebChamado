@@ -6,79 +6,96 @@ import AuthBox from '../components/AuthBox';
 import { useAuth } from '../contexts/AuthContext';
 
 const Home = () => {
-    const { user, loading, logout } = useAuth();
+    const { user, userData, loading, logout } = useAuth();
     const isAuthenticated = !!user;
 
     return (
         <div className="home-container">
-            {/* NOVO: PERFIL DO USUÁRIO NO TOPO */}
             {isAuthenticated && !loading && (
                 <header className="user-header">
                     <div className="user-info">
                         <span className="user-status-dot"></span>
                         <span className="user-display-name">
-                            {user.email}
+                            {userData?.name || user.email}
+                            <small style={{ marginLeft: '8px', color: '#64748b' }}>
+                                [{userData?.role || 'user'}]
+                            </small>
                         </span>
-                        <button onClick={logout} className="logout-text-btn">
-                            (Sair)
-                        </button>
+                        <button onClick={logout} className="logout-text-btn">(Sair)</button>
                     </div>
                 </header>
             )}
 
             <div className="hero-section">
                 <div className="hero-content">
-                    <h1>Portal de Chamados do Patrimônio Hospitalar</h1>
-                    <p>
-                        Hospital Municipal Conde Modesto Leal: Registre e acompanhe solicitações de manutenção e suporte técnico para garantir a excelência operacional de nossos bens e equipamentos.
-                    </p>
+                    <h1>Portal de Chamados</h1>
+                    <p className="subtitle">Patrimônio - Hospital Municipal Conde Modesto Leal</p>
 
-                    {loading && (
-                        <p className="loading-state">Verificando estado da sessão...</p>
-                    )}
+                    {loading && <p className="loading-state">Carregando...</p>}
 
-                    {/* BLOCO DE AÇÕES PARA LOGADOS */}
                     {isAuthenticated && !loading && (
                         <div className="logged-area">
-                            <div className="separator"></div>
-                            <h3 className="welcome-message">
-                                Olá, {user.displayName || 'Rodrigo'}! O que deseja fazer hoje?
-                            </h3>
+                            <h3 className="welcome-message">O que você precisa fazer hoje?</h3>
 
-                            <div className="hero-actions">
-                                <Link to="/abrir-chamado" className="hero-button primary-cta">
-                                    🔔 Abrir Novo Chamado
+                            <div className="action-grid">
+                                {/* SEÇÃO USUÁRIO */}
+                                <Link to="/abrir-chamado" className="action-card">
+                                    <div className="card-icon" style={{ backgroundColor: '#ebf5ff', color: '#3182ce' }}>🔔</div>
+                                    <div className="card-text">
+                                        <strong>Novo Chamado</strong>
+                                        <span>Registrar problema</span>
+                                    </div>
                                 </Link>
-                                <Link to="/meus-chamados" className="hero-button secondary-cta">
-                                    📋 Acompanhar Meus Tickets
+
+                                <Link to="/meus-chamados" className="action-card">
+                                    <div className="card-icon" style={{ backgroundColor: '#f0fff4', color: '#38a169' }}>📋</div>
+                                    <div className="card-text">
+                                        <strong>Meus Tickets</strong>
+                                        <span>Ver andamento</span>
+                                    </div>
                                 </Link>
+
+                                {/* SEÇÃO TÉCNICA (Analista/ADM) */}
+                                {(userData?.role === 'analista' || userData?.role === 'adm') && (
+                                    <Link to="/painel-analista" className="action-card technical">
+                                        <div className="card-icon" style={{ backgroundColor: '#fffaf0', color: '#dd6b20' }}>🛠️</div>
+                                        <div className="card-text">
+                                            <strong>Painel Técnico</strong>
+                                            <span>Fila de trabalho</span>
+                                        </div>
+                                    </Link>
+                                )}
+
+                                {/* SEÇÃO ADMINISTRATIVA */}
+                                {userData?.role === 'adm' && (
+                                    <>
+                                        <Link to="/admin/dashboard" className="action-card admin">
+                                            <div className="card-icon" style={{ backgroundColor: '#faf5ff', color: '#805ad5' }}>📊</div>
+                                            <div className="card-text">
+                                                <strong>Dashboard</strong>
+                                                <span>Estatísticas</span>
+                                            </div>
+                                        </Link>
+                                        <Link to="/admin/usuarios" className="action-card admin">
+                                            <div className="card-icon" style={{ backgroundColor: '#fff5f5', color: '#e53e3e' }}>👥</div>
+                                            <div className="card-text">
+                                                <strong>Usuários</strong>
+                                                <span>Gerenciar acesso</span>
+                                            </div>
+                                        </Link>
+                                    </>
+                                )}
                             </div>
                         </div>
                     )}
 
-                    {/* BLOCO DE LOGIN PARA NÃO LOGADOS */}
-                    {!isAuthenticated && !loading && (
-                        <>
-                            <AuthBox />
-                            <div className="separator"></div>
-                            <p className="login-prompt">
-                                Faça login acima para acessar o sistema de chamados.
-                            </p>
-                        </>
-                    )}
+                    {!isAuthenticated && !loading && <AuthBox />}
                 </div>
 
                 <div className="hero-image">
-                    <img
-                        src={ImagemPatrimonio}
-                        alt="Setor de Patrimônio Hospitalar"
-                    />
+                    <img src={ImagemPatrimonio} alt="Setor de Patrimônio" />
                 </div>
             </div>
-
-            <footer className="home-footer">
-                © 2025 Sistema de Chamados. Todos os direitos reservados.
-            </footer>
         </div>
     );
 };

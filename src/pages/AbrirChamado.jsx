@@ -4,7 +4,7 @@ import { AiOutlineHome } from 'react-icons/ai';
 import '../styles/AbrirChamado.css';
 
 // --- IMPORTAÇÕES DO FIREBASE ---
-import { db, auth } from "../api/firebase"; // ✅ Importado o 'auth' para pegar o ID do usuário
+import { db, auth } from "../api/firebase";
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const UNIDADES = [
@@ -39,7 +39,6 @@ const AbrirChamado = () => {
         setIsLoading(true);
         setError(null);
 
-        // ✅ Pega o usuário logado no momento do envio
         const user = auth.currentUser;
 
         if (!user) {
@@ -51,10 +50,16 @@ const AbrirChamado = () => {
         try {
             const chamadosRef = collection(db, 'chamados');
 
-            // 2. Envio dos dados incluindo o userId para permitir a filtragem na consulta
+            // 🚀 GERAÇÃO DO NÚMERO DE OS ALEATÓRIO (Ex: 2025-8429)
+            const anoAtual = new Date().getFullYear();
+            const aleatorio = Math.floor(1000 + Math.random() * 9000);
+            const novaOs = `${anoAtual}-${aleatorio}`;
+
+            // Envio dos dados incluindo o numeroOs
             await addDoc(chamadosRef, {
-                userId: user.uid,            // 👈 VITAL: Salva o ID do dono do chamado
-                emailSolicitante: user.email, // Útil para controle administrativo
+                numeroOs: novaOs,             // ✅ NOVO CAMPO: Número da Ordem de Serviço
+                userId: user.uid,
+                emailSolicitante: user.email,
                 nome: formData.nome,
                 unidade: formData.unidade,
                 setor: formData.setor,
@@ -99,7 +104,7 @@ const AbrirChamado = () => {
 
             {isSubmitted && (
                 <div className="success-message">
-                    ✅ Chamado registrado com sucesso! Redirecionando...
+                    ✅ Chamado registrado com sucesso! OS: Gerada
                 </div>
             )}
 

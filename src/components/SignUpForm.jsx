@@ -1,13 +1,9 @@
-// src/components/SignUpForm.jsx
-
 import React, { useState } from 'react';
-// 🛑 NOVAS IMPORTAÇÕES NECESSÁRIAS 🛑
-import { auth, db } from '../api/firebase'; // Importa Auth e Firestore DB
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'; // Adiciona updateProfile
-import { doc, setDoc } from 'firebase/firestore'; // Adiciona Firestore
+import { auth, db } from '../api/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
 const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
-    // 🛑 Adiciona o estado 'name' para salvar o nome do usuário 🛑
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -19,8 +15,7 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
         e.preventDefault();
         setError(null);
 
-        // 1. Validação simples de campos (Adicionando validação de nome)
-        if (!name || !email) { // Adiciona 'name' à validação
+        if (!name || !email) {
             setError("Por favor, preencha o nome e o email.");
             return;
         }
@@ -36,41 +31,42 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
         setIsLoading(true);
 
         try {
-            // 2. Chama a função do Firebase para criar o usuário (Authentication)
+            // 1. Cria o usuário no Authentication
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // 3. 🛑 ATUALIZAÇÃO 1: Adicionar Nome de Exibição no Firebase Auth 🛑
+            // 2. Atualiza o Perfil no Auth
             await updateProfile(user, {
                 displayName: name,
             });
 
-            // 4. 🛑 ATUALIZAÇÃO 2: Salvar Dados no Firestore 🛑
-            // Usa o user.uid para garantir que o ID do documento seja o mesmo ID de autenticação
-            await setDoc(doc(db, "users", user.uid), {
+            // 3. SALVA NO FIRESTORE
+            // 🛑 IMPORTANTE: Alterado de "users" para "usuarios" para bater com o AuthContext
+            await setDoc(doc(db, "usuarios", user.uid), {
                 uid: user.uid,
                 name: name,
                 email: email,
-                role: 'user', // Define um papel padrão
+                role: 'user', // Todo novo cadastro nasce como usuário comum
                 createdAt: new Date().toISOString(),
             });
 
-            // 5. Notifica o componente pai (AuthBox) do sucesso
-            if (onRegisterSuccess) {
-                onRegisterSuccess();
-            }
+            // 4. Aguarda um curto momento (500ms) para o Firestore processar 
+            // antes de disparar o sucesso e redirecionar
+            setTimeout(() => {
+                if (onRegisterSuccess) {
+                    onRegisterSuccess();
+                }
+            }, 500);
 
         } catch (firebaseError) {
-            // 6. Tratamento de Erros do Firebase
             let friendlyMessage = "Ocorreu um erro no registro.";
             if (firebaseError.code === 'auth/email-already-in-use') {
-                friendlyMessage = "Este email já está em uso. Tente fazer login.";
+                friendlyMessage = "Este email já está em uso.";
             } else if (firebaseError.code === 'auth/weak-password') {
-                friendlyMessage = "A senha é muito fraca (mínimo de 6 caracteres).";
+                friendlyMessage = "A senha é muito fraca.";
             } else if (firebaseError.code === 'auth/invalid-email') {
-                friendlyMessage = "O formato do email é inválido.";
+                friendlyMessage = "E-mail inválido.";
             }
-
             setError(friendlyMessage);
         } finally {
             setIsLoading(false);
@@ -80,9 +76,8 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
     return (
         <form onSubmit={handleSignUp} className="auth-form">
             <h3>Crie Sua Conta</h3>
-            <p className="auth-instruction">Cadastre seu e-mail e senha para acessar o sistema.</p>
+            <p className="auth-instruction">Cadastre-se para acessar o sistema.</p>
 
-            {/* 🛑 CAMPO NOVO: NOME DO USUÁRIO 🛑 */}
             <input
                 type="text"
                 placeholder="Seu Nome Completo"
@@ -92,7 +87,6 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
                 required
                 disabled={isLoading}
             />
-            {/* FIM CAMPO NOVO */}
 
             <input
                 type="email"
@@ -103,6 +97,7 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
                 required
                 disabled={isLoading}
             />
+
             <input
                 type="password"
                 placeholder="Senha (mín. 6 dígitos)"
@@ -112,6 +107,7 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
                 required
                 disabled={isLoading}
             />
+
             <input
                 type="password"
                 placeholder="Confirme a Senha"
@@ -122,14 +118,14 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
                 disabled={isLoading}
             />
 
-            {error && <p className="error-message" style={{ color: 'red' }}>{error}</p>}
+            {error && <p className="error-message" style={{ color: 'red', fontSize: '0.9em' }}>{error}</p>}
 
             <div className="auth-actions-visual">
                 <button type="submit" className="auth-button register-btn" disabled={isLoading}>
-                    {isLoading ? 'Cadastrando...' : 'Finalizar Cadastro'}
+                    {isLoading ? 'Processando...' : 'Finalizar Cadastro'}
                 </button>
                 <button type="button" onClick={onBackToLogin} className="auth-button back-btn" disabled={isLoading}>
-                    Voltar para Login
+                    Voltar
                 </button>
             </div>
         </form>
