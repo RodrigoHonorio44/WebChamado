@@ -6,17 +6,33 @@ import { doc, setDoc } from 'firebase/firestore';
 const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [cargo, setCargo] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
+    // ✅ LISTA DE CARGOS ATUALIZADA
+    const CARGOS = [
+        'Administrativo',
+        'Médico(a)',
+        'Enfermeiro(a)',
+        'Técnico(a) de Enfermagem',
+        'Técnico(a) de Radiologia',
+        'Farmacêutico(a)',
+        'Recepcionista',
+        'Diretoria',
+        'Surpevisão',
+        'TI'
+    ];
+
     const handleSignUp = async (e) => {
         e.preventDefault();
         setError(null);
 
-        if (!name || !email) {
-            setError("Por favor, preencha o nome e o email.");
+        // Validações básicas
+        if (!name || !email || !cargo) {
+            setError("Por favor, preencha todos os campos, incluindo o cargo.");
             return;
         }
         if (password !== confirmPassword) {
@@ -35,23 +51,22 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // 2. Atualiza o Perfil no Auth
+            // 2. Atualiza o Perfil no Auth (DisplayName)
             await updateProfile(user, {
                 displayName: name,
             });
 
-            // 3. SALVA NO FIRESTORE
-            // 🛑 IMPORTANTE: Alterado de "users" para "usuarios" para bater com o AuthContext
+            // 3. SALVA NO FIRESTORE (Na coleção 'usuarios')
             await setDoc(doc(db, "usuarios", user.uid), {
                 uid: user.uid,
                 name: name,
                 email: email,
-                role: 'user', // Todo novo cadastro nasce como usuário comum
+                cargo: cargo,
+                role: 'user',
                 createdAt: new Date().toISOString(),
             });
 
-            // 4. Aguarda um curto momento (500ms) para o Firestore processar 
-            // antes de disparar o sucesso e redirecionar
+            // 4. Sucesso
             setTimeout(() => {
                 if (onRegisterSuccess) {
                     onRegisterSuccess();
@@ -59,14 +74,15 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
             }, 500);
 
         } catch (firebaseError) {
+            console.error("Erro no cadastro:", firebaseError);
             let friendlyMessage = "Ocorreu um erro no registro.";
+
             if (firebaseError.code === 'auth/email-already-in-use') {
                 friendlyMessage = "Este email já está em uso.";
-            } else if (firebaseError.code === 'auth/weak-password') {
-                friendlyMessage = "A senha é muito fraca.";
-            } else if (firebaseError.code === 'auth/invalid-email') {
-                friendlyMessage = "E-mail inválido.";
+            } else if (firebaseError.code === 'permission-denied') {
+                friendlyMessage = "Erro de permissão no Firestore. Verifique as Regras (Rules).";
             }
+
             setError(friendlyMessage);
         } finally {
             setIsLoading(false);
@@ -78,6 +94,7 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
             <h3>Crie Sua Conta</h3>
             <p className="auth-instruction">Cadastre-se para acessar o sistema.</p>
 
+            {/* Nome */}
             <input
                 type="text"
                 placeholder="Seu Nome Completo"
@@ -88,6 +105,7 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
                 disabled={isLoading}
             />
 
+            {/* Email */}
             <input
                 type="email"
                 placeholder="Seu E-mail"
@@ -98,6 +116,22 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
                 disabled={isLoading}
             />
 
+            {/* Seleção de Cargo */}
+            <select
+                className="auth-input"
+                value={cargo}
+                onChange={(e) => setCargo(e.target.value)}
+                required
+                disabled={isLoading}
+                style={{ backgroundColor: 'white' }}
+            >
+                <option value="" disabled>Selecione seu Cargo</option>
+                {CARGOS.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                ))}
+            </select>
+
+            {/* Senha */}
             <input
                 type="password"
                 placeholder="Senha (mín. 6 dígitos)"
@@ -108,6 +142,7 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
                 disabled={isLoading}
             />
 
+            {/* Confirmar Senha */}
             <input
                 type="password"
                 placeholder="Confirme a Senha"
@@ -118,7 +153,7 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
                 disabled={isLoading}
             />
 
-            {error && <p className="error-message" style={{ color: 'red', fontSize: '0.9em' }}>{error}</p>}
+            {error && <p className="error-message" style={{ color: 'red', fontSize: '0.9em', textAlign: 'center' }}>{error}</p>}
 
             <div className="auth-actions-visual">
                 <button type="submit" className="auth-button register-btn" disabled={isLoading}>

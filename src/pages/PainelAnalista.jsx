@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../api/firebase';
+import { db, auth } from '../api/firebase';
 import { collection, query, getDocs, doc, updateDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import '../styles/MeusChamados.css';
@@ -34,15 +34,18 @@ const PainelAnalista = () => {
 
     const confirmarFinalizacao = async () => {
         if (!parecerTecnico.trim()) {
-            alert("Por favor, descreva o que foi feito no chamado.");
+            alert("Por favor, descreva detalhadamente o que foi feito no chamado.");
             return;
         }
 
         try {
+            const analistaLogado = auth.currentUser;
             const chamadoRef = doc(db, "chamados", chamadoParaFinalizar);
+
             await updateDoc(chamadoRef, {
                 status: 'fechado',
                 feedbackAnalista: parecerTecnico,
+                tecnicoResponsavel: analistaLogado.displayName || "Equipe de TI",
                 finalizadoEm: serverTimestamp()
             });
 
@@ -51,6 +54,7 @@ const PainelAnalista = () => {
             setParecerTecnico("");
             buscarTodosChamados();
         } catch (error) {
+            console.error(error);
             alert("Erro ao concluir chamado.");
         }
     };
@@ -71,6 +75,8 @@ const PainelAnalista = () => {
                             <tr>
                                 <th>OS</th>
                                 <th>Solicitante</th>
+                                <th>Setor</th>
+                                <th>Descrição / Parecer</th> {/* ✅ Nova coluna centralizada */}
                                 <th>Unidade</th>
                                 <th>Prioridade</th>
                                 <th>Status</th>
@@ -81,32 +87,70 @@ const PainelAnalista = () => {
                             {chamados.map((item) => (
                                 <tr key={item.id}>
                                     <td className="os-cell">{item.numeroOs || 'S/N'}</td>
-                                    <td>{item.nome} <br /> <small>{item.setor}</small></td>
+
+                                    <td>
+                                        <div className="user-info-cell">
+                                            <strong>{item.nome}</strong>
+                                            <small className="user-cargo-label">{item.cargo}</small>
+                                        </div>
+                                    </td>
+
+                                    <td>{item.setor}</td>
+
+                                    {/* COLUNA DESCRIÇÃO / PARECER */}
+                                    <td style={{ maxWidth: '300px' }}>
+                                        {item.status === 'fechado' ? (
+                                            <div className="parecer-finalizado">
+                                                <small><strong>Parecer Técnico:</strong></small>
+                                                <p style={{ fontSize: '0.85rem', color: '#065f46', whiteSpace: 'pre-wrap' }}>
+                                                    {item.feedbackAnalista}
+                                                </p>
+                                                <small style={{ fontSize: '0.7rem', color: '#666' }}>
+                                                    Ref: {item.tecnicoResponsavel}
+                                                </small>
+                                            </div>
+                                        ) : (
+                                            <div className="descricao-aberto">
+                                                <small><strong>Problema relatado:</strong></small>
+                                                <p style={{ fontSize: '0.85rem', color: '#444' }}>
+                                                    {item.descricao || "Sem descrição informada."}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </td>
+
                                     <td>{item.unidade}</td>
+
                                     <td>
                                         <span className={`prioridade-tag ${item.prioridade?.toLowerCase()}`}>
                                             {item.prioridade}
                                         </span>
                                     </td>
+
                                     <td>
                                         <span className={`status-badge ${item.status?.toLowerCase()}`}>
                                             {item.status}
                                         </span>
                                     </td>
-                                    <td>
+
+                                    {/* COLUNA DE AÇÕES COM O FORMULÁRIO GRANDE */}
+                                    <td className="analista-actions-cell">
                                         {item.status === 'aberto' && (
-                                            <div className="analista-actions-cell">
+                                            <>
                                                 {chamadoParaFinalizar === item.id ? (
-                                                    <div className="feedback-form-container">
+                                                    <div className="feedback-form-container" style={{ minWidth: '400px' }}>
+                                                        <h4 style={{ marginBottom: '10px' }}>Finalizar OS: {item.numeroOs}</h4>
                                                         <textarea
-                                                            placeholder="Descreva detalhadamente o que foi feito para solucionar o problema..."
+                                                            placeholder="Descreva aqui o parecer técnico detalhado..."
                                                             value={parecerTecnico}
                                                             onChange={(e) => setParecerTecnico(e.target.value)}
                                                             className="feedback-textarea-large"
+                                                            style={{ minHeight: '250px', width: '100%' }}
+                                                            autoFocus
                                                         />
-                                                        <div className="feedback-buttons-group">
-                                                            <button onClick={confirmarFinalizacao} className="btn-save">Finalizar Chamado</button>
-                                                            <button onClick={() => setChamadoParaFinalizar(null)} className="btn-cancel">Cancelar</button>
+                                                        <div className="feedback-buttons-group" style={{ marginTop: '10px' }}>
+                                                            <button onClick={confirmarFinalizacao} className="btn-save">Salvar e Concluir</button>
+                                                            <button onClick={() => setChamadoParaFinalizar(null)} className="btn-cancel">Voltar</button>
                                                         </div>
                                                     </div>
                                                 ) : (
@@ -117,13 +161,10 @@ const PainelAnalista = () => {
                                                         Concluir
                                                     </button>
                                                 )}
-                                            </div>
+                                            </>
                                         )}
                                         {item.status === 'fechado' && (
-                                            <div className="feedback-view">
-                                                <strong>Resolvido:</strong>
-                                                <p>{item.feedbackAnalista}</p>
-                                            </div>
+                                            <span style={{ color: '#059669', fontWeight: 'bold' }}>✓ Finalizado</span>
                                         )}
                                     </td>
                                 </tr>

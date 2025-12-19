@@ -1,8 +1,9 @@
-/* src/styles/MeusChamados.css (COMPLETO E ATUALIZADO) */
+/* src/styles/MeusChamados.css (ATUALIZADO COM NOME E CARGO) */
 
 .meus-chamados-container {
     padding: 40px;
-    max-width: 1200px;
+    max-width: 1400px;
+    /* Aumentado para acomodar as novas colunas */
     margin: 0 auto;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
@@ -29,14 +30,41 @@
     text-decoration: underline;
 }
 
+/* --- ESTILOS DO SOLICITANTE (NOME E CARGO) --- */
+.user-info-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.user-name {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 0.9rem;
+}
+
+.user-cargo-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-style: italic;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+    width: fit-content;
+}
+
 /* --- TABELA --- */
+.table-responsive {
+    overflow-x: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
 .chamados-table {
     width: 100%;
     border-collapse: collapse;
     background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .chamados-table th,
@@ -44,7 +72,8 @@
     padding: 15px;
     text-align: left;
     border-bottom: 1px solid #eee;
-    vertical-align: top;
+    vertical-align: middle;
+    /* Alinhamento centralizado verticalmente */
 }
 
 .chamados-table th {
@@ -52,111 +81,48 @@
     color: #475569;
     font-weight: 700;
     text-transform: uppercase;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     letter-spacing: 0.05em;
 }
 
 .os-cell {
     font-family: 'Courier New', Courier, monospace;
     color: #1e3a8a;
-    font-weight: bold;
+    font-size: 1rem;
 }
 
-/* --- CÉLULA DE AÇÕES E FORMULÁRIO DO ANALISTA --- */
-.analista-actions-cell {
-    min-width: 350px;
-    /* Largura mínima aumentada para o formulário */
+.desc-cell {
+    min-width: 250px;
+    max-width: 400px;
 }
 
-.feedback-form-container {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    background: #f1f5f9;
-    /* Fundo levemente destacado */
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #cbd5e0;
-    margin: 5px 0;
-}
-
-.feedback-textarea-large {
-    width: 100%;
-    min-height: 180px;
-    /* CAMPO BEM MAIOR PARA O ANALISTA */
-    padding: 12px;
-    border-radius: 6px;
-    border: 2px solid #cbd5e0;
-    font-family: inherit;
-    font-size: 0.95rem;
-    resize: vertical;
-    /* Permite esticar manualmente se precisar */
-    box-sizing: border-box;
-    line-height: 1.5;
-}
-
-.feedback-textarea-large:focus {
-    border-color: #3b82f6;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.feedback-buttons-group {
-    display: flex;
-    gap: 10px;
-}
-
-.btn-save {
-    background-color: #16a34a;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-    flex: 2;
-    /* Botão de salvar maior que o de cancelar */
-    transition: background 0.2s;
-}
-
-.btn-save:hover {
-    background-color: #15803d;
-}
-
-.btn-cancel {
-    background-color: #64748b;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-    flex: 1;
-}
-
-.btn-concluir-main {
-    background-color: #3b82f6;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-/* --- VISUALIZAÇÃO DO FEEDBACK FECHADO --- */
-.feedback-view {
-    max-width: 350px;
+.original-desc {
     font-size: 0.9rem;
-    background-color: #f8fafc;
-    padding: 8px;
-    border-radius: 4px;
-    border-left: 3px solid #64748b;
+    color: #334155;
+    line-height: 1.4;
+    margin-bottom: 8px;
 }
 
-.feedback-view p {
-    margin: 5px 0 0 0;
-    color: #334155;
+/* --- PARECER TÉCNICO (FEEDBACK DO ANALISTA) --- */
+.analista-feedback-box {
+    background-color: #f0f7ff;
+    /* Azul bem claro */
+    border-left: 4px solid #3b82f6;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+.analista-feedback-box strong {
+    color: #1e40af;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+.analista-feedback-box p {
+    margin: 4px 0 0 0;
+    color: #1e3a8a;
+    font-size: 0.85rem;
     line-height: 1.4;
 }
 
@@ -164,10 +130,12 @@
 .status-badge {
     padding: 6px 12px;
     border-radius: 20px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: bold;
     text-transform: uppercase;
+    text-align: center;
     display: inline-block;
+    min-width: 80px;
 }
 
 .status-badge.aberto {
@@ -178,9 +146,9 @@
 
 .status-badge.fechado,
 .status-badge.concluido {
-    background: #fee2e2;
-    color: #b91c1c;
-    border: 1px solid #fecaca;
+    background: #e2e8f0;
+    color: #475569;
+    border: 1px solid #cbd5e0;
 }
 
 .prioridade-tag {
@@ -206,10 +174,12 @@
     color: #166534;
 }
 
+/* --- DATA E HORA --- */
 .data-hora-cell {
     font-size: 0.85rem;
     color: #334155;
     white-space: nowrap;
+    line-height: 1.3;
 }
 
 .hora-text {
@@ -220,7 +190,8 @@
 
 .no-data {
     text-align: center;
-    padding: 50px;
+    padding: 60px 20px;
+    color: #64748b;
 }
 
 .btn-abrir {
@@ -229,21 +200,25 @@
     padding: 12px 24px;
     background: #38c172;
     color: white;
+    text-decoration: none;
     border-radius: 6px;
     font-weight: bold;
+    transition: background 0.3s;
 }
 
-/* Responsividade */
-@media (max-width: 768px) {
-    .chamados-table thead {
-        display: none;
+.btn-abrir:hover {
+    background: #2fa360;
+}
+
+/* Responsividade para Telas Pequenas */
+@media (max-width: 1024px) {
+    .meus-chamados-container {
+        padding: 20px;
     }
 
+    .chamados-table th,
     .chamados-table td {
-        display: block;
-        text-align: right;
-        border-bottom: 1px solid #eee;
-        position: relative;
-        padding-left: 50%;
+        padding: 10px;
+        font-size: 0.85rem;
     }
 }
