@@ -10,10 +10,15 @@ import Home from './pages/Home';
 import AbrirChamado from './pages/AbrirChamado';
 import MeusChamados from './pages/MeusChamados';
 
-// 🆕 NOVAS PÁGINAS (Crie estes arquivos na pasta pages)
-import PainelAnalista from './pages/PainelAnalista'; // Fila de chamados
-import AdminUsuarios from './pages/AdminUsuarios';   // Gerenciar analistas
-import DashboardAdm from './pages/DashboardAdm';     // Gráficos e stats
+// PÁGINAS TÉCNICAS E ADM
+import PainelAnalista from './pages/PainelAnalista';
+import AdminUsuarios from './pages/AdminUsuarios';
+import DashboardAdm from './pages/DashboardAdm';
+
+// PÁGINAS DE PATRIMÔNIO
+import CadastroEquipamento from './pages/CadastroEquipamento';
+import SaidaEquipamento from './pages/SaidaEquipamento';
+import BaixaPatrimonio from './pages/BaixaPatrimonio'; // 🆕 Importando a nova página de Baixa
 
 const App = () => {
   return (
@@ -36,25 +41,48 @@ const App = () => {
               </ProtectedRoute>
             } />
 
-            {/* 🔵 ROTA DO ANALISTA (Fila Geral) */}
+            {/* 🔵 ROTA DO ANALISTA */}
             <Route path="/painel-analista" element={
               <ProtectedRoute roleRequired="analista">
                 <PainelAnalista />
               </ProtectedRoute>
             } />
 
-            {/* 🔴 ROTAS DO ADM (Gestão e Dashboard) */}
+            {/* 🔴 ROTAS DO ADM */}
             <Route path="/admin/usuarios" element={
               <ProtectedRoute roleRequired="adm">
                 <AdminUsuarios />
               </ProtectedRoute>
             } />
+
             <Route path="/admin/dashboard" element={
               <ProtectedRoute roleRequired="adm">
                 <DashboardAdm />
               </ProtectedRoute>
             } />
 
+            {/* 📦 GESTÃO DE PATRIMÔNIO (Entrada) */}
+            <Route path="/admin/cadastro-patrimonio" element={
+              <ProtectedRoute roleRequired="adm">
+                <CadastroEquipamento />
+              </ProtectedRoute>
+            } />
+
+            {/* 📤 GESTÃO DE PATRIMÔNIO (Saída/Movimentação) */}
+            <Route path="/admin/saida-patrimonio" element={
+              <ProtectedRoute roleRequired="adm">
+                <SaidaEquipamento />
+              </ProtectedRoute>
+            } />
+
+            {/* ⚠️ GESTÃO DE PATRIMÔNIO (Baixa Definitiva) */}
+            <Route path="/admin/baixa-patrimonio" element={ // 🆕 Rota para Baixa
+              <ProtectedRoute roleRequired="adm">
+                <BaixaPatrimonio />
+              </ProtectedRoute>
+            } />
+
+            {/* Rota 404 */}
             <Route path="*" element={<div style={{ padding: '50px', textAlign: 'center' }}><h2>404 - Página Não Encontrada</h2></div>} />
           </Routes>
         </div>

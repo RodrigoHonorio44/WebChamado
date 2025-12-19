@@ -66,9 +66,36 @@ const Home = () => {
                                     </Link>
                                 )}
 
-                                {/* SEÇÃO ADMINISTRATIVA */}
+                                {/* SEÇÃO ADMINISTRATIVA - EXCLUSIVA PARA ADM */}
                                 {userData?.role === 'adm' && (
                                     <>
+                                        {/* ENTRADA DE PATRIMÔNIO */}
+                                        <Link to="/admin/cadastro-patrimonio" className="action-card admin">
+                                            <div className="card-icon" style={{ backgroundColor: '#ecfdf5', color: '#059669' }}>📦</div>
+                                            <div className="card-text">
+                                                <strong>Novo Patrimônio</strong>
+                                                <span>Entrada de material</span>
+                                            </div>
+                                        </Link>
+
+                                        {/* SAÍDA DE PATRIMÔNIO */}
+                                        <Link to="/admin/saida-patrimonio" className="action-card admin">
+                                            <div className="card-icon" style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}>📤</div>
+                                            <div className="card-text">
+                                                <strong>Saída de Equipamento</strong>
+                                                <span>Baixa ou transferência</span>
+                                            </div>
+                                        </Link>
+
+                                        {/* ✅ NOVO CARD: BAIXA DE PATRIMÔNIO */}
+                                        <Link to="/admin/baixa-patrimonio" className="action-card admin">
+                                            <div className="card-icon" style={{ backgroundColor: '#f3f4f6', color: '#374151' }}>⚠️</div>
+                                            <div className="card-text">
+                                                <strong>Baixa de Patrimônio</strong>
+                                                <span>Remover do inventário</span>
+                                            </div>
+                                        </Link>
+
                                         <Link to="/admin/dashboard" className="action-card admin">
                                             <div className="card-icon" style={{ backgroundColor: '#faf5ff', color: '#805ad5' }}>📊</div>
                                             <div className="card-text">
@@ -76,6 +103,7 @@ const Home = () => {
                                                 <span>Estatísticas</span>
                                             </div>
                                         </Link>
+
                                         <Link to="/admin/usuarios" className="action-card admin">
                                             <div className="card-icon" style={{ backgroundColor: '#fff5f5', color: '#e53e3e' }}>👥</div>
                                             <div className="card-text">
