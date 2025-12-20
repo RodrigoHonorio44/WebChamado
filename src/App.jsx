@@ -1,9 +1,12 @@
-// src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+
+// Importações do Toastify
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // PÁGINAS EXISTENTES
 import Home from './pages/Home';
@@ -18,7 +21,7 @@ import DashboardAdm from './pages/DashboardAdm';
 // PÁGINAS DE PATRIMÔNIO
 import CadastroEquipamento from './pages/CadastroEquipamento';
 import SaidaEquipamento from './pages/SaidaEquipamento';
-import BaixaPatrimonio from './pages/BaixaPatrimonio'; // 🆕 Importando a nova página de Baixa
+import BaixaPatrimonio from './pages/BaixaPatrimonio';
 
 const App = () => {
   return (
@@ -61,22 +64,20 @@ const App = () => {
               </ProtectedRoute>
             } />
 
-            {/* 📦 GESTÃO DE PATRIMÔNIO (Entrada) */}
+            {/* 📦 GESTÃO DE PATRIMÔNIO */}
             <Route path="/admin/cadastro-patrimonio" element={
               <ProtectedRoute roleRequired="adm">
                 <CadastroEquipamento />
               </ProtectedRoute>
             } />
 
-            {/* 📤 GESTÃO DE PATRIMÔNIO (Saída/Movimentação) */}
             <Route path="/admin/saida-patrimonio" element={
               <ProtectedRoute roleRequired="adm">
                 <SaidaEquipamento />
               </ProtectedRoute>
             } />
 
-            {/* ⚠️ GESTÃO DE PATRIMÔNIO (Baixa Definitiva) */}
-            <Route path="/admin/baixa-patrimonio" element={ // 🆕 Rota para Baixa
+            <Route path="/admin/baixa-patrimonio" element={
               <ProtectedRoute roleRequired="adm">
                 <BaixaPatrimonio />
               </ProtectedRoute>
@@ -85,6 +86,20 @@ const App = () => {
             {/* Rota 404 */}
             <Route path="*" element={<div style={{ padding: '50px', textAlign: 'center' }}><h2>404 - Página Não Encontrada</h2></div>} />
           </Routes>
+
+          {/* 🔔 Container de Notificações Global */}
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="colored"
+          />
         </div>
       </AuthProvider>
     </Router>

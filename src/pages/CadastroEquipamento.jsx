@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../api/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; // Importante para a segurança
-import '../styles/CadastroEquipamento.css'; // Importando o CSS específico
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-toastify'; // Importando para melhor feedback
+import '../styles/CadastroEquipamento.css';
 
 const CadastroEquipamento = () => {
     const { userData, loading: authLoading } = useAuth();
@@ -21,38 +22,46 @@ const CadastroEquipamento = () => {
         observacoes: ''
     });
 
-    // Segurança: Redireciona se não for ADM
     useEffect(() => {
         if (!authLoading && userData?.role !== 'adm') {
+            toast.error("Acesso negado. Apenas administradores.");
             navigate('/');
         }
     }, [userData, authLoading, navigate]);
 
-    const unidades = [
-        "Hospital Conde",
-        "Upa de Inoã",
-        "Upa de Santa Rita",
-        "Samu Barroco",
-        "Samu Ponta Negra"
-    ];
+    const unidades = ["Hospital Conde", "Upa de Inoã", "Upa de Santa Rita", "Samu Barroco", "Samu Ponta Negra"];
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         if (!formData.unidade) {
-            alert("Por favor, selecione uma unidade.");
+            toast.warning("Por favor, selecione uma unidade.");
             return;
         }
+
         setLoading(true);
+        const idToast = toast.loading("Salvando no patrimônio...");
 
         try {
-            await addDoc(collection(db, "ativos"), {
+            // Criando o objeto de salvamento
+            const novoAtivo = {
                 ...formData,
                 quantidade: Number(formData.quantidade),
                 status: 'Ativo',
                 criadoEm: serverTimestamp(),
-            });
+            };
 
-            alert("Equipamento registrado com sucesso no patrimônio!");
+            // Tenta salvar na coleção "ativos"
+            const docRef = await addDoc(collection(db, "ativos"), novoAtivo);
+
+            console.log("Documento escrito com ID: ", docRef.id);
+
+            toast.update(idToast, {
+                render: "Equipamento registrado com sucesso!",
+                type: "success",
+                isLoading: false,
+                autoClose: 3000
+            });
 
             // Limpa o form mantendo a unidade
             setFormData({
@@ -65,9 +74,15 @@ const CadastroEquipamento = () => {
                 estado: 'Novo',
                 observacoes: ''
             });
+
         } catch (error) {
-            console.error("Erro ao cadastrar:", error);
-            alert("Erro ao salvar equipamento.");
+            console.error("Erro detalhado ao cadastrar:", error);
+            toast.update(idToast, {
+                render: `Erro: ${error.message}`,
+                type: "error",
+                isLoading: false,
+                autoClose: 5000
+            });
         } finally {
             setLoading(false);
         }
@@ -85,6 +100,7 @@ const CadastroEquipamento = () => {
             </header>
 
             <form onSubmit={handleSubmit} className="equip-form">
+                {/* O restante do seu JSX permanece igual */}
                 <div className="form-row">
                     <div className="form-group">
                         <label>Número do Patrimônio (TAG):</label>
@@ -119,6 +135,7 @@ const CadastroEquipamento = () => {
                             onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
                         >
                             <option value="Mobiliário">Mobiliário</option>
+                            <option value="Refrigeração">Refrigeração</option>
                             <option value="Informática">Informática</option>
                             <option value="Equip. Médico">Equipamento Médico</option>
                             <option value="Ferramenta">Ferramenta</option>
