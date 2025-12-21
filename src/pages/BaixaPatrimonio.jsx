@@ -1,13 +1,14 @@
-// src/pages/BaixaPatrimonio.jsx
 import React, { useState } from 'react';
 import { db } from '../api/firebase';
-import { collection, query, where, getDocs, updateDoc, doc, serverTimestamp, addDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, doc, serverTimestamp, addDoc, limit } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
-import '../styles/CadastroEquipamento.css'; // Reutilizando o estilo padrão
+import { toast } from 'react-toastify';
+import '../styles/CadastroEquipamento.css';
 
 const BaixaPatrimonio = () => {
-    const [patrimonioBusca, setPatrimonioBusca] = useState('');
-    const [itemEncontrado, setItemEncontrado] = useState(null);
+    const [busca, setBusca] = useState('');
+    const [itensEncontrados, setItensEncontrados] = useState([]);
+    const [itemSelecionado, setItemSelecionado] = useState(null);
     const [loading, setLoading] = useState(false);
 
     const [dadosBaixa, setDadosBaixa] = useState({
@@ -17,21 +18,46 @@ const BaixaPatrimonio = () => {
     });
 
     const buscarEquipamento = async () => {
-        if (!patrimonioBusca) return;
+        if (!busca) {
+            toast.warn("Digite o patrimônio ou nome do item.");
+            return;
+        }
+
         setLoading(true);
+        setItemSelecionado(null);
+        setItensEncontrados([]);
+
         try {
-            const q = query(collection(db, "ativos"), where("patrimonio", "==", patrimonioBusca), where("status", "==", "Ativo"));
-            const querySnapshot = await getDocs(q);
+            const ativosRef = collection(db, "ativos");
+            const termoBusca = busca.toUpperCase().trim();
+
+            // Tenta buscar primeiro por Patrimônio exato
+            let q = query(ativosRef, where("patrimonio", "==", termoBusca), where("status", "==", "Ativo"));
+            let querySnapshot = await getDocs(q);
+
+            // Se não achou por patrimônio, tenta buscar por Nome (para itens S/P)
+            if (querySnapshot.empty) {
+                q = query(
+                    ativosRef,
+                    where("nome", ">=", busca),
+                    where("nome", "<=", busca + '\uf8ff'),
+                    where("status", "==", "Ativo"),
+                    limit(10)
+                );
+                querySnapshot = await getDocs(q);
+            }
 
             if (!querySnapshot.empty) {
-                const docData = querySnapshot.docs[0].data();
-                setItemEncontrado({ id: querySnapshot.docs[0].id, ...docData });
+                const lista = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setItensEncontrados(lista);
+                if (lista.length === 1) setItemSelecionado(lista[0]);
+                toast.success(`${lista.length} item(s) encontrado(s)`);
             } else {
-                alert("Património não encontrado ou já baixado!");
-                setItemEncontrado(null);
+                toast.error("Nenhum item ativo encontrado com este termo.");
             }
         } catch (error) {
             console.error(error);
+            toast.error("Erro na busca.");
         } finally {
             setLoading(false);
         }
@@ -39,34 +65,36 @@ const BaixaPatrimonio = () => {
 
     const handleBaixa = async (e) => {
         e.preventDefault();
-        if (!window.confirm("Tem certeza que deseja dar BAIXA definitiva neste património?")) return;
-
         setLoading(true);
         try {
-            // 1. Atualiza o item para status 'Baixado'
-            const ativoRef = doc(db, "ativos", itemEncontrado.id);
+            const ativoRef = doc(db, "ativos", itemSelecionado.id);
+
             await updateDoc(ativoRef, {
                 status: 'Baixado',
                 dataBaixa: serverTimestamp(),
-                motivoBaixa: dadosBaixa.motivo
+                motivoBaixa: dadosBaixa.motivo,
+                ultimaMovimentacao: serverTimestamp()
             });
 
-            // 2. Regista no histórico de baixas
             await addDoc(collection(db, "historico_baixas"), {
-                patrimonio: itemEncontrado.patrimonio,
-                nome: itemEncontrado.nome,
-                unidadeAnterior: itemEncontrado.unidade,
+                ativoId: itemSelecionado.id,
+                patrimonio: itemSelecionado.patrimonio,
+                nome: itemSelecionado.nome,
+                unidadeAnterior: itemSelecionado.unidade,
+                setorAnterior: itemSelecionado.setor,
                 motivo: dadosBaixa.motivo,
                 observacao: dadosBaixa.observacao,
                 autorizadoPor: dadosBaixa.autorizadoPor,
-                dataMovimentacao: serverTimestamp()
+                dataBaixa: serverTimestamp()
             });
 
-            alert("Baixa realizada com sucesso!");
-            setItemEncontrado(null);
-            setPatrimonioBusca('');
+            toast.success("Baixa definitiva registrada!");
+            setItemSelecionado(null);
+            setItensEncontrados([]);
+            setBusca('');
+            setDadosBaixa({ motivo: 'Sucata/Danificado', observacao: '', autorizadoPor: '' });
         } catch (error) {
-            alert("Erro ao processar baixa.");
+            toast.error("Erro ao processar baixa.");
         } finally {
             setLoading(false);
         }
@@ -75,34 +103,104 @@ const BaixaPatrimonio = () => {
     return (
         <div className="cadastro-equip-container">
             <header className="cadastro-equip-header">
-                <h1>⚠️ Baixa de Património</h1>
-                <Link to="/" className="back-link">Voltar</Link>
+                <h1>⚠️ Baixa de Patrimônio</h1>
+                <Link to="/" className="back-link">Voltar ao Início</Link>
             </header>
 
-            <div className="form-group" style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
-                <input
-                    type="text"
-                    placeholder="Nº do Património para BAIXA"
-                    value={patrimonioBusca}
-                    onChange={(e) => setPatrimonioBusca(e.target.value)}
-                />
-                <button onClick={buscarEquipamento} className="btn-registrar-patrimonio" style={{ marginTop: 0, padding: '10px', background: '#4a5568' }}>
-                    Buscar
-                </button>
+            {/* BUSCA COM DESIGN MELHORADO */}
+            <div className="busca-unificada-container" style={{
+                background: '#fff',
+                padding: '25px',
+                borderRadius: '16px',
+                boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                marginBottom: '25px',
+                border: '1px solid #e2e8f0'
+            }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', fontWeight: '600', color: '#475569' }}>
+                    Buscar por Patrimônio ou Nome (Itens S/P):
+                </label>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <input
+                        type="text"
+                        placeholder="Ex: HMC-001 ou Monitor Dell..."
+                        value={busca}
+                        onChange={(e) => setBusca(e.target.value)}
+                        style={{
+                            flex: 1,
+                            padding: '12px 16px',
+                            borderRadius: '10px',
+                            border: '2px solid #cbd5e1',
+                            fontSize: '1rem',
+                            outline: 'none',
+                            transition: 'border-color 0.2s'
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#6366f1'}
+                        onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                    />
+                    <button
+                        onClick={buscarEquipamento}
+                        disabled={loading}
+                        style={{
+                            padding: '0 25px',
+                            borderRadius: '10px',
+                            backgroundColor: '#1e293b',
+                            color: 'white',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            border: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseOver={(e) => e.target.style.backgroundColor = '#334155'}
+                        onMouseOut={(e) => e.target.style.backgroundColor = '#1e293b'}
+                    >
+                        {loading ? '...' : '🔍 Buscar'}
+                    </button>
+                </div>
             </div>
 
-            {itemEncontrado && (
-                <form onSubmit={handleBaixa} className="equip-form">
-                    <div className="info-box" style={{ background: '#fff5f5', padding: '15px', borderRadius: '8px', border: '1px solid #feb2b2' }}>
-                        <p><strong>Item:</strong> {itemEncontrado.nome}</p>
-                        <p><strong>Local:</strong> {itemEncontrado.unidade} - {itemEncontrado.setor}</p>
-                        <p style={{ color: '#c53030', fontWeight: 'bold' }}>ESTADO ATUAL: {itemEncontrado.estado}</p>
+            {/* SELEÇÃO QUANDO HÁ MÚLTIPLOS RESULTADOS (S/P) */}
+            {!itemSelecionado && itensEncontrados.length > 1 && (
+                <div style={{ marginBottom: '20px', display: 'grid', gap: '10px' }}>
+                    <p style={{ fontSize: '0.9rem', color: '#64748b' }}>Selecione o item para baixa:</p>
+                    {itensEncontrados.map(item => (
+                        <div
+                            key={item.id}
+                            onClick={() => setItemSelecionado(item)}
+                            style={{
+                                padding: '12px',
+                                background: 'white',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                justifyContent: 'space-between'
+                            }}
+                        >
+                            <span><strong>{item.nome}</strong> - {item.patrimonio}</span>
+                            <span style={{ color: '#6366f1' }}>Selecionar →</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {itemSelecionado && (
+                <form onSubmit={handleBaixa} className="equip-form" style={{ borderTop: '4px solid #ef4444', animation: 'fadeIn 0.3s ease' }}>
+                    <div style={{ background: '#fef2f2', padding: '20px', borderRadius: '12px', marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <h3 style={{ color: '#991b1b' }}>Confirmação de Baixa</h3>
+                            <button type="button" onClick={() => setItemSelecionado(null)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem' }}>Trocar Item</button>
+                        </div>
+                        <p style={{ marginTop: '10px' }}><strong>Item:</strong> {itemSelecionado.nome} | <strong>Patrimônio:</strong> {itemSelecionado.patrimonio}</p>
+                        <p><strong>Localização:</strong> {itemSelecionado.unidade} ({itemSelecionado.setor})</p>
                     </div>
 
                     <div className="form-row">
                         <div className="form-group">
                             <label>Motivo da Baixa:</label>
-                            <select required onChange={(e) => setDadosBaixa({ ...dadosBaixa, motivo: e.target.value })}>
+                            <select value={dadosBaixa.motivo} required onChange={(e) => setDadosBaixa({ ...dadosBaixa, motivo: e.target.value })}>
                                 <option value="Sucata/Danificado">Sucata / Danificado</option>
                                 <option value="Extravio/Roubo">Extravio / Roubo</option>
                                 <option value="Leilão">Leilão</option>
@@ -111,17 +209,17 @@ const BaixaPatrimonio = () => {
                         </div>
                         <div className="form-group">
                             <label>Autorizado por:</label>
-                            <input type="text" required placeholder="Nome do Responsável" onChange={(e) => setDadosBaixa({ ...dadosBaixa, autorizadoPor: e.target.value })} />
+                            <input type="text" required placeholder="Nome do Responsável" value={dadosBaixa.autorizadoPor} onChange={(e) => setDadosBaixa({ ...dadosBaixa, autorizadoPor: e.target.value })} />
                         </div>
                     </div>
 
                     <div className="form-group">
                         <label>Observações da Baixa:</label>
-                        <textarea placeholder="Descreva o motivo técnico da baixa..." onChange={(e) => setDadosBaixa({ ...dadosBaixa, observacao: e.target.value })} />
+                        <textarea placeholder="Detalhes técnicos sobre o motivo da baixa..." value={dadosBaixa.observacao} onChange={(e) => setDadosBaixa({ ...dadosBaixa, observacao: e.target.value })} />
                     </div>
 
-                    <button type="submit" className="btn-registrar-patrimonio" disabled={loading} style={{ background: '#2d3748' }}>
-                        {loading ? 'Processando...' : 'Confirmar Baixa Definitiva'}
+                    <button type="submit" className="btn-registrar-patrimonio" disabled={loading} style={{ background: '#b91c1c', width: '100%', padding: '15px', fontSize: '1rem' }}>
+                        {loading ? 'Processando...' : 'Confirmar BAIXA DEFINITIVA'}
                     </button>
                 </form>
             )}

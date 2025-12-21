@@ -28,8 +28,8 @@ const Home = () => {
 
             <div className="hero-section">
                 <div className="hero-content">
-                    <h1>Portal de Chamados</h1>
-                    <p className="subtitle">Patrimônio - Hospital Municipal Conde Modesto Leal</p>
+                    <h1>Portal de Gestão Integrada</h1>
+                    <p className="subtitle">Setor de Patrimônio - HMCML</p>
 
                     {loading && <p className="loading-state">Carregando...</p>}
 

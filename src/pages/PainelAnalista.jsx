@@ -16,16 +16,52 @@ const PainelAnalista = () => {
     const [chamadoParaFinalizar, setChamadoParaFinalizar] = useState(null);
     const [parecerTecnico, setParecerTecnico] = useState("");
 
+    // ✅ Estados para os indicadores e unidades
+    const [stats, setStats] = useState({ abertos: 0, hoje: 0, total: 0 });
+    const [statsUnidades, setStatsUnidades] = useState({});
+
     const buscarTodosChamados = async () => {
         setLoading(true);
         try {
             const q = query(collection(db, "chamados"), orderBy("criadoEm", "desc"));
             const querySnapshot = await getDocs(q);
             const lista = [];
+
+            let contAbertos = 0;
+            let contHoje = 0;
+            const dataHoje = new Date().toLocaleDateString('pt-BR');
+            const unidadesMap = {};
+
             querySnapshot.forEach((doc) => {
-                lista.push({ id: doc.id, ...doc.data() });
+                const dados = doc.data();
+                lista.push({ id: doc.id, ...dados });
+
+                // Contar abertos
+                if (dados.status?.toLowerCase() === 'aberto') {
+                    contAbertos++;
+
+                    // ✅ Contagem por unidade (apenas para chamados abertos)
+                    if (dados.unidade) {
+                        unidadesMap[dados.unidade] = (unidadesMap[dados.unidade] || 0) + 1;
+                    }
+                }
+
+                // Contar chamados do dia
+                if (dados.criadoEm) {
+                    const dataDoc = dados.criadoEm.toDate().toLocaleDateString('pt-BR');
+                    if (dataDoc === dataHoje) {
+                        contHoje++;
+                    }
+                }
             });
+
             setChamados(lista);
+            setStatsUnidades(unidadesMap);
+            setStats({
+                abertos: contAbertos,
+                hoje: contHoje,
+                total: lista.length
+            });
         } catch (error) {
             toast.error("Erro ao carregar chamados.");
         } finally {
@@ -65,6 +101,8 @@ const PainelAnalista = () => {
             await batch.commit();
             toast.update(idToast, { render: "Fila zerada e Excel baixado!", type: "success", isLoading: false, autoClose: 3000 });
             setChamados([]);
+            setStats({ abertos: 0, hoje: 0, total: 0 });
+            setStatsUnidades({});
             setAguardandoConfirmação(false);
         } catch (error) {
             toast.update(idToast, { render: "Erro na operação.", type: "error", isLoading: false, autoClose: 3000 });
@@ -126,6 +164,40 @@ const PainelAnalista = () => {
                     </div>
                 )}
             </header>
+
+            {/* ✅ SEÇÃO DE CARDS DE INDICADORES PRINCIPAIS */}
+            {!loading && (
+                <>
+                    <div className="stats-dashboard" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
+                        <div className="stat-card" style={{ background: '#fff', padding: '15px', borderRadius: '10px', borderLeft: '5px solid #6366f1', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#64748b' }}>TOTAL NA FILA</span>
+                            <h2 style={{ fontSize: '1.6rem', margin: '5px 0', color: '#1e293b' }}>{stats.total}</h2>
+                        </div>
+                        <div className="stat-card" style={{ background: '#fff', padding: '15px', borderRadius: '10px', borderLeft: '5px solid #f59e0b', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#64748b' }}>⏳ AGUARDANDO (ABERTOS)</span>
+                            <h2 style={{ fontSize: '1.6rem', margin: '5px 0', color: '#d97706' }}>{stats.abertos}</h2>
+                        </div>
+                        <div className="stat-card" style={{ background: '#fff', padding: '15px', borderRadius: '10px', borderLeft: '5px solid #10b981', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#64748b' }}>🆕 CHAMADOS DE HOJE</span>
+                            <h2 style={{ fontSize: '1.6rem', margin: '5px 0', color: '#059669' }}>{stats.hoje}</h2>
+                        </div>
+                    </div>
+
+                    {/* ✅ SEÇÃO DE INDICADORES POR UNIDADE */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px', marginBottom: '25px' }}>
+                        {Object.entries(statsUnidades).length > 0 ? (
+                            Object.entries(statsUnidades).map(([nomeUnidade, qtd]) => (
+                                <div key={nomeUnidade} style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#475569' }}>{nomeUnidade}</span>
+                                    <span style={{ background: '#6366f1', color: 'white', padding: '2px 8px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 'bold' }}>{qtd}</span>
+                                </div>
+                            ))
+                        ) : (
+                            <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic' }}>Nenhum chamado aberto por unidade.</div>
+                        )}
+                    </div>
+                </>
+            )}
 
             {loading ? <div className="loading-state">Carregando chamados...</div> : (
                 <div className="table-responsive" style={{ background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import Footer from './components/Footer'; // ✅ Importação do novo Footer
 
 // Importações do Toastify
 import { ToastContainer } from 'react-toastify';
@@ -27,65 +28,77 @@ const App = () => {
   return (
     <Router>
       <AuthProvider>
-        <div className="App">
-          <Routes>
-            {/* Rota Pública */}
-            <Route path="/" element={<Home />} />
+        {/* ✅ Wrapper com Flexbox para empurrar o footer para baixo */}
+        <div className="App" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh' // Ocupa no mínimo a altura da tela inteira
+        }}>
 
-            {/* 🟢 ROTAS DO USUÁRIO COMUM */}
-            <Route path="/abrir-chamado" element={
-              <ProtectedRoute>
-                <AbrirChamado />
-              </ProtectedRoute>
-            } />
-            <Route path="/meus-chamados" element={
-              <ProtectedRoute>
-                <MeusChamados />
-              </ProtectedRoute>
-            } />
+          {/* ✅ O conteúdo principal cresce para ocupar o espaço disponível */}
+          <main style={{ flex: '1' }}>
+            <Routes>
+              {/* Rota Pública */}
+              <Route path="/" element={<Home />} />
 
-            {/* 🔵 ROTA DO ANALISTA */}
-            <Route path="/painel-analista" element={
-              <ProtectedRoute roleRequired="analista">
-                <PainelAnalista />
-              </ProtectedRoute>
-            } />
+              {/* 🟢 ROTAS DO USUÁRIO COMUM */}
+              <Route path="/abrir-chamado" element={
+                <ProtectedRoute>
+                  <AbrirChamado />
+                </ProtectedRoute>
+              } />
+              <Route path="/meus-chamados" element={
+                <ProtectedRoute>
+                  <MeusChamados />
+                </ProtectedRoute>
+              } />
 
-            {/* 🔴 ROTAS DO ADM */}
-            <Route path="/admin/usuarios" element={
-              <ProtectedRoute roleRequired="adm">
-                <AdminUsuarios />
-              </ProtectedRoute>
-            } />
+              {/* 🔵 ROTA DO ANALISTA */}
+              <Route path="/painel-analista" element={
+                <ProtectedRoute roleRequired="analista">
+                  <PainelAnalista />
+                </ProtectedRoute>
+              } />
 
-            <Route path="/admin/dashboard" element={
-              <ProtectedRoute roleRequired="adm">
-                <DashboardAdm />
-              </ProtectedRoute>
-            } />
+              {/* 🔴 ROTAS DO ADM */}
+              <Route path="/admin/usuarios" element={
+                <ProtectedRoute roleRequired="adm">
+                  <AdminUsuarios />
+                </ProtectedRoute>
+              } />
 
-            {/* 📦 GESTÃO DE PATRIMÔNIO */}
-            <Route path="/admin/cadastro-patrimonio" element={
-              <ProtectedRoute roleRequired="adm">
-                <CadastroEquipamento />
-              </ProtectedRoute>
-            } />
+              <Route path="/admin/dashboard" element={
+                <ProtectedRoute roleRequired="adm">
+                  <DashboardAdm />
+                </ProtectedRoute>
+              } />
 
-            <Route path="/admin/saida-patrimonio" element={
-              <ProtectedRoute roleRequired="adm">
-                <SaidaEquipamento />
-              </ProtectedRoute>
-            } />
+              {/* 📦 GESTÃO DE PATRIMÔNIO */}
+              <Route path="/admin/cadastro-patrimonio" element={
+                <ProtectedRoute roleRequired="adm">
+                  <CadastroEquipamento />
+                </ProtectedRoute>
+              } />
 
-            <Route path="/admin/baixa-patrimonio" element={
-              <ProtectedRoute roleRequired="adm">
-                <BaixaPatrimonio />
-              </ProtectedRoute>
-            } />
+              <Route path="/admin/saida-patrimonio" element={
+                <ProtectedRoute roleRequired="adm">
+                  <SaidaEquipamento />
+                </ProtectedRoute>
+              } />
 
-            {/* Rota 404 */}
-            <Route path="*" element={<div style={{ padding: '50px', textAlign: 'center' }}><h2>404 - Página Não Encontrada</h2></div>} />
-          </Routes>
+              <Route path="/admin/baixa-patrimonio" element={
+                <ProtectedRoute roleRequired="adm">
+                  <BaixaPatrimonio />
+                </ProtectedRoute>
+              } />
+
+              {/* Rota 404 */}
+              <Route path="*" element={<div style={{ padding: '50px', textAlign: 'center' }}><h2>404 - Página Não Encontrada</h2></div>} />
+            </Routes>
+          </main>
+
+          {/* ✅ Footer inserido fora do <main> para ficar no rodapé global */}
+          <Footer />
 
           {/* 🔔 Container de Notificações Global */}
           <ToastContainer

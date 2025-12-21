@@ -11,7 +11,7 @@ const SaidaEquipamento = () => {
     const [itensEncontrados, setItensEncontrados] = useState([]);
     const [itemSelecionado, setItemSelecionado] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [novoPatrimonioParaSP, setNovoPatrimonioParaSP] = useState(''); // Novo estado
+    const [novoPatrimonioParaSP, setNovoPatrimonioParaSP] = useState('');
 
     const [dadosSaida, setDadosSaida] = useState({
         novaUnidade: '',
@@ -26,34 +26,57 @@ const SaidaEquipamento = () => {
         setLoading(true);
         setItemSelecionado(null);
         setItensEncontrados([]);
-        setNovoPatrimonioParaSP('');
 
         try {
             const ativosRef = collection(db, "ativos");
             let q;
 
             if (tipo === 'patrimonio') {
-                if (!patrimonioBusca) return;
-                q = query(ativosRef, where("patrimonio", "==", patrimonioBusca.toUpperCase()));
+                const termo = patrimonioBusca.toUpperCase().trim();
+                if (termo === 'S/P' || termo === 'SP') {
+                    toast.info("Para itens S/P, use o campo de busca por NOME.");
+                    setLoading(false);
+                    return;
+                }
+                q = query(ativosRef, where("patrimonio", "==", termo), where("status", "==", "Ativo"));
+                const snap = await getDocs(q);
+                const lista = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                processarResultados(lista);
             } else {
-                if (!nomeBusca) return;
-                // Busca por nome exato ou S/P
-                q = query(ativosRef, where("nome", "==", nomeBusca), limit(15));
-            }
+                // ESTRATÉGIA NOVA: Busca global por itens ativos e filtra no código
+                const termoOriginal = nomeBusca.toLowerCase().trim();
+                if (!termoOriginal) { toast.warn("Digite o nome."); setLoading(false); return; }
 
-            const querySnapshot = await getDocs(q);
+                // Buscamos os itens Ativos (limitado a 100 para não pesar)
+                const qGeral = query(ativosRef, where("status", "==", "Ativo"), limit(100));
+                const snapGeral = await getDocs(qGeral);
 
-            if (!querySnapshot.empty) {
-                const lista = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setItensEncontrados(lista);
-                if (lista.length === 1) setItemSelecionado(lista[0]);
-            } else {
-                toast.error("Nenhum item encontrado.");
+                const listaFiltrada = snapGeral.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .filter(item =>
+                        item.nome.toLowerCase().includes(termoOriginal) ||
+                        item.patrimonio.toLowerCase() === termoOriginal
+                    );
+
+                processarResultados(listaFiltrada);
             }
         } catch (error) {
-            toast.error("Erro na consulta.");
+            console.error(error);
+            toast.error("Erro ao buscar.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const processarResultados = (lista) => {
+        if (lista.length > 0) {
+            setItensEncontrados(lista);
+            if (lista.length === 1) {
+                setItemSelecionado(lista[0]);
+                toast.success("Item localizado!");
+            }
+        } else {
+            toast.error("Nenhum item encontrado. Verifique se está cadastrado como 'Ativo'.");
         }
     };
 
@@ -62,33 +85,31 @@ const SaidaEquipamento = () => {
         setLoading(true);
         try {
             const ativoRef = doc(db, "ativos", itemSelecionado.id);
-
-            // Define o número final do patrimônio (se era S/P e digitou um novo, usa o novo)
             const patrimonioFinal = (itemSelecionado.patrimonio === 'S/P' && novoPatrimonioParaSP)
                 ? novoPatrimonioParaSP.toUpperCase()
                 : itemSelecionado.patrimonio;
 
-            // 1. Atualiza o Ativo
             await updateDoc(ativoRef, {
                 unidade: dadosSaida.novaUnidade,
                 setor: dadosSaida.novoSetor,
-                patrimonio: patrimonioFinal, // Atualiza se deixou de ser S/P
+                patrimonio: patrimonioFinal,
                 ultimaMovimentacao: serverTimestamp()
             });
 
-            // 2. Salva Histórico
-            await addDoc(collection(db, "movimentacoes"), {
+            await addDoc(collection(db, "saidaEquipamento"), {
+                ativoId: itemSelecionado.id,
                 patrimonio: patrimonioFinal,
-                nome: itemSelecionado.nome,
-                origemUnidade: itemSelecionado.unidade,
-                destinoUnidade: dadosSaida.novaUnidade,
+                nomeEquipamento: itemSelecionado.nome,
+                unidadeOrigem: itemSelecionado.unidade,
+                setorOrigem: itemSelecionado.setor,
+                unidadeDestino: dadosSaida.novaUnidade,
+                setorDestino: dadosSaida.novoSetor,
+                responsavelRecebimento: dadosSaida.responsavelRecebimento,
                 motivo: dadosSaida.motivo,
-                quemRecebeu: dadosSaida.responsavelRecebimento,
-                dataSaida: serverTimestamp(),
-                observacao: itemSelecionado.patrimonio === 'S/P' && novoPatrimonioParaSP ? "Patrimônio atribuído na saída" : ""
+                dataSaida: serverTimestamp()
             });
 
-            toast.success("Movimentação e atualização realizadas!");
+            toast.success("Transferência realizada!");
             setItemSelecionado(null);
             setItensEncontrados([]);
             setPatrimonioBusca('');
@@ -105,118 +126,76 @@ const SaidaEquipamento = () => {
         <div className="cadastro-equip-container">
             <header className="cadastro-equip-header">
                 <h1>📤 Saída / Transferência</h1>
-                <Link to="/" className="back-link">Voltar ao Início</Link>
+                <Link to="/" className="back-link">Voltar</Link>
             </header>
 
-            {/* SEÇÃO DE BUSCA ESTILIZADA */}
+            {/* BUSCA POR PATRIMÔNIO */}
             <div className="busca-unificada-container" style={{
-                background: '#ffffff',
-                padding: '25px',
-                borderRadius: '15px',
-                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                marginBottom: '30px',
-                border: '1px solid #e2e8f0'
+                background: '#fff', padding: '20px', borderRadius: '12px',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '15px', border: '1px solid #e2e8f0'
             }}>
-                <h3 style={{ marginBottom: '15px', color: '#1e293b', fontSize: '1rem' }}>🔎 Localizar Equipamento</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-
-                    <div className="campo-busca">
-                        <label style={{ fontSize: '0.85rem', color: '#64748b' }}>Por Nº Patrimônio</label>
-                        <div style={{ display: 'flex', gap: '8px', marginTop: '5px' }}>
-                            <input
-                                type="text"
-                                placeholder="HMC-000"
-                                value={patrimonioBusca}
-                                onChange={(e) => setPatrimonioBusca(e.target.value)}
-                                style={{ borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                            />
-                            <button onClick={() => executarBusca('patrimonio')} className="btn-save" style={{ margin: 0, padding: '0 15px' }}>OK</button>
-                        </div>
-                    </div>
-
-                    <div className="campo-busca">
-                        <label style={{ fontSize: '0.85rem', color: '#64748b' }}>Por Nome do Item</label>
-                        <div style={{ display: 'flex', gap: '8px', marginTop: '5px' }}>
-                            <input
-                                type="text"
-                                placeholder="Cadeira, Monitor..."
-                                value={nomeBusca}
-                                onChange={(e) => setNomeBusca(e.target.value)}
-                                style={{ borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                            />
-                            <button onClick={() => executarBusca('nome')} className="btn-save" style={{ margin: 0, padding: '0 15px', backgroundColor: '#4f46e5' }}>OK</button>
-                        </div>
-                    </div>
-
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#475569' }}>Nº Patrimônio:</label>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <input
+                        type="text" placeholder="HMC-001" value={patrimonioBusca}
+                        onChange={(e) => setPatrimonioBusca(e.target.value)}
+                        style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                    />
+                    <button onClick={() => executarBusca('patrimonio')} style={{ padding: '10px 20px', borderRadius: '8px', backgroundColor: '#1e293b', color: 'white', border: 'none', cursor: 'pointer' }}>Buscar</button>
                 </div>
             </div>
 
-            {/* LISTAGEM DE RESULTADOS */}
+            {/* BUSCA POR NOME (AQUI É ONDE TUDO É RESOLVIDO) */}
+            <div className="busca-unificada-container" style={{
+                background: '#fff', padding: '20px', borderRadius: '12px',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.1)', marginBottom: '20px', border: '1px solid #e2e8f0'
+            }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#475569' }}>Busca por Nome ou S/P:</label>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <input
+                        type="text" placeholder="Ex: mesa, monitor, sp..." value={nomeBusca}
+                        onChange={(e) => setNomeBusca(e.target.value)}
+                        style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                    />
+                    <button onClick={() => executarBusca('nome')} style={{ padding: '10px 20px', borderRadius: '8px', backgroundColor: '#4f46e5', color: 'white', border: 'none', cursor: 'pointer' }}>Buscar Nome</button>
+                </div>
+            </div>
+
+            {/* LISTA DE RESULTADOS */}
             {!itemSelecionado && itensEncontrados.length > 0 && (
-                <div className="resultados-lista" style={{ animation: 'fadeIn 0.3s ease-in' }}>
-                    <p style={{ marginBottom: '10px', color: '#475569' }}>Encontramos {itensEncontrados.length} itens. <strong>Clique no correto:</strong></p>
+                <div style={{ marginBottom: '20px', maxHeight: '300px', overflowY: 'auto', border: '1px solid #eee', padding: '10px', borderRadius: '10px' }}>
                     {itensEncontrados.map(item => (
-                        <div key={item.id} className="item-resultado-card" onClick={() => setItemSelecionado(item)}
+                        <div
+                            key={item.id}
+                            onClick={() => setItemSelecionado(item)}
                             style={{
-                                padding: '15px',
-                                background: 'white',
-                                border: '1px solid #e2e8f0',
-                                borderRadius: '10px',
-                                marginBottom: '10px',
-                                cursor: 'pointer',
-                                transition: '0.2s'
-                            }}>
-                            <div>
-                                <strong style={{ fontSize: '1.1rem', color: '#1e293b' }}>{item.nome}</strong>
-                                <div style={{ marginTop: '4px' }}>
-                                    <span style={{
-                                        padding: '2px 8px',
-                                        borderRadius: '4px',
-                                        fontSize: '0.75rem',
-                                        background: item.patrimonio === 'S/P' ? '#fee2e2' : '#f1f5f9',
-                                        color: item.patrimonio === 'S/P' ? '#b91c1c' : '#475569',
-                                        fontWeight: 'bold'
-                                    }}>
-                                        {item.patrimonio}
-                                    </span>
-                                    <span style={{ marginLeft: '10px', color: '#64748b', fontSize: '0.85rem' }}>📍 {item.unidade} ({item.setor})</span>
-                                </div>
-                            </div>
+                                padding: '12px', borderBottom: '1px solid #eee', cursor: 'pointer',
+                                display: 'flex', justifyContent: 'space-between', backgroundColor: '#fff'
+                            }}
+                        >
+                            <span><strong>{item.nome}</strong> — {item.patrimonio}</span>
+                            <small style={{ color: '#6366f1' }}>{item.unidade}</small>
                         </div>
                     ))}
                 </div>
             )}
 
-            {/* FORMULÁRIO DE MOVIMENTAÇÃO */}
+            {/* FORMULÁRIO DE SAÍDA */}
             {itemSelecionado && (
-                <form onSubmit={handleSaida} className="equip-form" style={{ background: '#fff', padding: '25px', borderRadius: '15px', border: '1px solid #4f46e5' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-                        <div>
-                            <h2 style={{ color: '#1e293b' }}>{itemSelecionado.nome}</h2>
-                            <p style={{ color: '#64748b' }}>Localização Atual: {itemSelecionado.unidade} - {itemSelecionado.setor}</p>
+                <form onSubmit={handleSaida} className="equip-form" style={{ borderTop: '4px solid #4f46e5' }}>
+                    <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '10px', marginBottom: '15px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <strong>{itemSelecionado.nome}</strong>
+                            <button type="button" onClick={() => setItemSelecionado(null)} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>[Trocar]</button>
                         </div>
-                        <button type="button" onClick={() => setItemSelecionado(null)} style={{ background: '#fff1f2', color: '#e11d48', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer' }}>Trocar Item</button>
+                        <p style={{ margin: 0, fontSize: '0.9rem' }}>Patrimônio Atual: {itemSelecionado.patrimonio}</p>
+                        <p style={{ margin: 0, fontSize: '0.9rem' }}>Local Atual: {itemSelecionado.unidade}</p>
                     </div>
 
-                    {/* CAMPO CONDICIONAL PARA ITEM S/P */}
                     {itemSelecionado.patrimonio === 'S/P' && (
-                        <div style={{
-                            background: '#fffbeb',
-                            padding: '15px',
-                            borderRadius: '8px',
-                            border: '1px solid #fcd34d',
-                            marginBottom: '20px'
-                        }}>
-                            <label style={{ color: '#92400e', fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>
-                                📢 Item sem patrimônio! Deseja numerar agora?
-                            </label>
-                            <input
-                                type="text"
-                                placeholder="Digite o novo Nº de Patrimônio (Opcional)"
-                                value={novoPatrimonioParaSP}
-                                onChange={(e) => setNovoPatrimonioParaSP(e.target.value)}
-                                style={{ borderColor: '#fcd34d' }}
-                            />
+                        <div style={{ background: '#fffbeb', padding: '10px', borderRadius: '8px', border: '1px solid #fcd34d', marginBottom: '15px' }}>
+                            <label style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Deseja numerar este S/P agora?</label>
+                            <input type="text" placeholder="Novo Patrimônio" value={novoPatrimonioParaSP} onChange={(e) => setNovoPatrimonioParaSP(e.target.value)} />
                         </div>
                     )}
 
@@ -224,23 +203,23 @@ const SaidaEquipamento = () => {
                         <div className="form-group">
                             <label>Unidade de Destino:</label>
                             <select required onChange={(e) => setDadosSaida({ ...dadosSaida, novaUnidade: e.target.value })}>
-                                <option value="">Selecione a Unidade...</option>
+                                <option value="">Selecione...</option>
                                 {unidades.map(u => <option key={u} value={u}>{u}</option>)}
                             </select>
                         </div>
                         <div className="form-group">
                             <label>Novo Setor:</label>
-                            <input type="text" required placeholder="Ex: CTI Adulto" onChange={(e) => setDadosSaida({ ...dadosSaida, novoSetor: e.target.value })} />
+                            <input type="text" required placeholder="Ex: Financeiro" onChange={(e) => setDadosSaida({ ...dadosSaida, novoSetor: e.target.value })} />
                         </div>
                     </div>
 
                     <div className="form-group">
                         <label>Responsável pelo Recebimento:</label>
-                        <input type="text" required placeholder="Quem recebeu o item?" onChange={(e) => setDadosSaida({ ...dadosSaida, responsavelRecebimento: e.target.value })} />
+                        <input type="text" required placeholder="Nome de quem recebeu" onChange={(e) => setDadosSaida({ ...dadosSaida, responsavelRecebimento: e.target.value })} />
                     </div>
 
-                    <button type="submit" className="btn-registrar-patrimonio" disabled={loading} style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)', width: '100%', marginTop: '10px' }}>
-                        {loading ? 'Gravando Alterações...' : 'Confirmar Saída e Atualizar Local'}
+                    <button type="submit" className="btn-registrar-patrimonio" disabled={loading} style={{ width: '100%', backgroundColor: '#4f46e5' }}>
+                        {loading ? 'Processando...' : 'Confirmar Transferência'}
                     </button>
                 </form>
             )}
