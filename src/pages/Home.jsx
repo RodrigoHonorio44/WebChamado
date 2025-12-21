@@ -38,7 +38,7 @@ const Home = () => {
                             <h3 className="welcome-message">O que você precisa fazer hoje?</h3>
 
                             <div className="action-grid">
-                                {/* SEÇÃO USUÁRIO */}
+                                {/* SEÇÃO USUÁRIO / COMUM */}
                                 <Link to="/abrir-chamado" className="action-card">
                                     <div className="card-icon" style={{ backgroundColor: '#ebf5ff', color: '#3182ce' }}>🔔</div>
                                     <div className="card-text">
@@ -66,10 +66,9 @@ const Home = () => {
                                     </Link>
                                 )}
 
-                                {/* SEÇÃO ADMINISTRATIVA - EXCLUSIVA PARA ADM */}
+                                {/* SEÇÃO ADMINISTRATIVA EXCLUSIVA */}
                                 {userData?.role === 'adm' && (
                                     <>
-                                        {/* ENTRADA DE PATRIMÔNIO */}
                                         <Link to="/admin/cadastro-patrimonio" className="action-card admin">
                                             <div className="card-icon" style={{ backgroundColor: '#ecfdf5', color: '#059669' }}>📦</div>
                                             <div className="card-text">
@@ -78,29 +77,29 @@ const Home = () => {
                                             </div>
                                         </Link>
 
-                                        {/* SAÍDA DE PATRIMÔNIO */}
                                         <Link to="/admin/saida-patrimonio" className="action-card admin">
                                             <div className="card-icon" style={{ backgroundColor: '#fee2e2', color: '#dc2626' }}>📤</div>
                                             <div className="card-text">
-                                                <strong>Saída de Equipamento</strong>
-                                                <span>Baixa ou transferência</span>
+                                                <strong>Transferência</strong>
+                                                <span>Movimentar item</span>
                                             </div>
                                         </Link>
 
-                                        {/* ✅ NOVO CARD: BAIXA DE PATRIMÔNIO */}
-                                        <Link to="/admin/baixa-patrimonio" className="action-card admin">
-                                            <div className="card-icon" style={{ backgroundColor: '#f3f4f6', color: '#374151' }}>⚠️</div>
+                                        {/* ✅ NOVO: INVENTÁRIO (ONDE TEM A BAIXA E EXPORTAÇÃO) */}
+                                        <Link to="/admin/inventario" className="action-card admin">
+                                            <div className="card-icon" style={{ backgroundColor: '#e0f2fe', color: '#0369a1' }}>📊</div>
                                             <div className="card-text">
-                                                <strong>Baixa de Patrimônio</strong>
-                                                <span>Remover do inventário</span>
+                                                <strong>Inventário Geral</strong>
+                                                <span>Baixas e Relatórios</span>
                                             </div>
                                         </Link>
 
-                                        <Link to="/admin/dashboard" className="action-card admin">
-                                            <div className="card-icon" style={{ backgroundColor: '#faf5ff', color: '#805ad5' }}>📊</div>
+                                        {/* ✅ NOVO: ESTOQUE (CONSUMÍVEIS) */}
+                                        <Link to="/admin/estoque" className="action-card admin">
+                                            <div className="card-icon" style={{ backgroundColor: '#fef3c7', color: '#d97706' }}>🏬</div>
                                             <div className="card-text">
-                                                <strong>Dashboard</strong>
-                                                <span>Estatísticas</span>
+                                                <strong>Estoque</strong>
+                                                <span>Materiais de consumo</span>
                                             </div>
                                         </Link>
 

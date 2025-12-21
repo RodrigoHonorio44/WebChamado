@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import Footer from './components/Footer'; // ✅ Importação do novo Footer
+import Footer from './components/Footer';
 
 // Importações do Toastify
 import { ToastContainer } from 'react-toastify';
@@ -19,23 +19,22 @@ import PainelAnalista from './pages/PainelAnalista';
 import AdminUsuarios from './pages/AdminUsuarios';
 import DashboardAdm from './pages/DashboardAdm';
 
-// PÁGINAS DE PATRIMÔNIO
+// PÁGINAS DE PATRIMÔNIO E LOGÍSTICA
 import CadastroEquipamento from './pages/CadastroEquipamento';
 import SaidaEquipamento from './pages/SaidaEquipamento';
-import BaixaPatrimonio from './pages/BaixaPatrimonio';
+import Inventario from './pages/Inventario'; // ✅ Nova página
+import Estoque from './pages/Estoque';       // ✅ Nova página
 
 const App = () => {
   return (
     <Router>
       <AuthProvider>
-        {/* ✅ Wrapper com Flexbox para empurrar o footer para baixo */}
         <div className="App" style={{
           display: 'flex',
           flexDirection: 'column',
-          minHeight: '100vh' // Ocupa no mínimo a altura da tela inteira
+          minHeight: '100vh'
         }}>
 
-          {/* ✅ O conteúdo principal cresce para ocupar o espaço disponível */}
           <main style={{ flex: '1' }}>
             <Routes>
               {/* Rota Pública */}
@@ -73,7 +72,7 @@ const App = () => {
                 </ProtectedRoute>
               } />
 
-              {/* 📦 GESTÃO DE PATRIMÔNIO */}
+              {/* 📦 GESTÃO DE PATRIMÔNIO E INVENTÁRIO */}
               <Route path="/admin/cadastro-patrimonio" element={
                 <ProtectedRoute roleRequired="adm">
                   <CadastroEquipamento />
@@ -86,9 +85,17 @@ const App = () => {
                 </ProtectedRoute>
               } />
 
-              <Route path="/admin/baixa-patrimonio" element={
+              {/* ✅ Rota de Inventário (Substitui a Baixa isolada) */}
+              <Route path="/admin/inventario" element={
                 <ProtectedRoute roleRequired="adm">
-                  <BaixaPatrimonio />
+                  <Inventario />
+                </ProtectedRoute>
+              } />
+
+              {/* ✅ Rota de Estoque (Consumíveis) */}
+              <Route path="/admin/estoque" element={
+                <ProtectedRoute roleRequired="adm">
+                  <Estoque />
                 </ProtectedRoute>
               } />
 
@@ -97,10 +104,8 @@ const App = () => {
             </Routes>
           </main>
 
-          {/* ✅ Footer inserido fora do <main> para ficar no rodapé global */}
           <Footer />
 
-          {/* 🔔 Container de Notificações Global */}
           <ToastContainer
             position="top-right"
             autoClose={3000}
