@@ -87,19 +87,57 @@ const Inventario = () => {
         }
     };
 
+    // --- NOVA LÓGICA DE EXPORTAÇÃO COM ABAS SEPARADAS ---
     const exportarExcelCompleto = (e) => {
         if (e) e.preventDefault();
-        if (itensFiltradosParaExibir.length === 0) return toast.error("Sem dados.");
+        if (itens.length === 0) return toast.error("Carregue os dados primeiro.");
+
         const wb = XLSX.utils.book_new();
-        const dados = itensFiltradosParaExibir.map(i => ({
-            Patrimonio: i.patrimonio,
-            Equipamento: i.nome,
-            Unidade: i.unidade,
-            Setor: i.setor,
-            Status: i.status
-        }));
-        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dados), "Relatorio");
-        XLSX.writeFile(wb, `RELATORIO_${unidadeFiltro}.xlsx`);
+
+        // 1. Lista de unidades para criar abas de ATIVOS
+        const unidades = [
+            "Hospital conde",
+            "upa de Santa rita",
+            "upa de inoã",
+            "samu do barroco",
+            "samu de ponta negra"
+        ];
+
+        unidades.forEach(unid => {
+            const ativosDaUnidade = itens.filter(i =>
+                i.status === 'Ativo' &&
+                i.unidade?.toLowerCase() === unid.toLowerCase()
+            );
+
+            if (ativosDaUnidade.length > 0) {
+                const dados = ativosDaUnidade.map(i => ({
+                    Patrimonio: i.patrimonio,
+                    Equipamento: i.nome,
+                    Setor: i.setor,
+                    Status: i.status
+                }));
+                const ws = XLSX.utils.json_to_sheet(dados);
+                // Nome da aba limitado a 31 caracteres (regra do Excel)
+                XLSX.utils.book_append_sheet(wb, ws, unid.toUpperCase().substring(0, 31));
+            }
+        });
+
+        // 2. Criar aba para TODOS os itens BAIXADOS
+        const baixados = itens.filter(i => i.status === 'Baixado');
+        if (baixados.length > 0) {
+            const dadosBaixados = baixados.map(i => ({
+                Patrimonio: i.patrimonio,
+                Equipamento: i.nome,
+                Unidade: i.unidade,
+                Setor: i.setor,
+                Status: i.status
+            }));
+            const wsBaixados = XLSX.utils.json_to_sheet(dadosBaixados);
+            XLSX.utils.book_append_sheet(wb, wsBaixados, "ITENS BAIXADOS");
+        }
+
+        XLSX.writeFile(wb, `INVENTARIO_DETALHADO.xlsx`);
+        toast.success("Excel gerado com abas por unidade!");
     };
 
     if (loading) return <div className="loading">Carregando...</div>;
@@ -147,7 +185,7 @@ const Inventario = () => {
                     </div>
 
                     <div style={{ display: 'flex', gap: '10px' }}>
-                        <button type="button" onClick={exportarExcelCompleto} style={{ backgroundColor: '#059669', color: 'white', padding: '10px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>📊 Excel</button>
+                        <button type="button" onClick={exportarExcelCompleto} style={{ backgroundColor: '#059669', color: 'white', padding: '10px', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>📊 Excel Detalhado</button>
                         <Link to="/" className="back-link">Sair</Link>
                     </div>
                 </div>
@@ -173,7 +211,7 @@ const Inventario = () => {
                                 <td style={{ padding: '15px' }}>
                                     <span style={{
                                         fontWeight: 'bold',
-                                        color: item.status === 'Ativo' ? '#2563eb' : '#dc2626' // AZUL para ativo, VERMELHO para baixado
+                                        color: item.status === 'Ativo' ? '#2563eb' : '#dc2626'
                                     }}>
                                         {item.status}
                                     </span>
