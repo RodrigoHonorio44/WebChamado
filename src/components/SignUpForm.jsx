@@ -2,47 +2,36 @@ import React, { useState } from 'react';
 import { auth, db } from '../api/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
+import { FiCheck, FiX, FiUser, FiMail, FiLock, FiArrowLeft, FiBriefcase } from 'react-icons/fi';
+import { toast } from 'react-toastify';
 
 const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [cargo, setCargo] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [error, setError] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    // ✅ LISTA DE CARGOS ATUALIZADA
     const CARGOS = [
-        'Administrativo',
-        'Médico(a)',
-        'Enfermeiro(a)',
-        'Técnico(a) de Enfermagem',
-        'Técnico(a) de Radiologia',
-        'Farmacêutico(a)',
-        'Recepcionista',
-        'Diretoria',
-        'Surpevisão',
-        'TI'
+        'Administrativo', 'Médico(a)', 'Enfermeiro(a)',
+        'Técnico(a) de Enfermagem', 'Técnico(a) de Radiologia',
+        'Farmacêutico(a)', 'Recepcionista', 'Diretoria',
+        'Surpevisão', 'TI'
     ];
+
+    // ✅ REGRAS DE VALIDAÇÃO (Mesmas do Admin)
+    const requisitos = {
+        nome: name.trim().includes(" ") && name.trim().split(" ").length >= 2,
+        minimo: password.length >= 6,
+        maiuscula: /[A-Z]/.test(password),
+        especial: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
+
+    const podeCadastrar = Object.values(requisitos).every(Boolean) && email.includes("@") && cargo !== "";
 
     const handleSignUp = async (e) => {
         e.preventDefault();
-        setError(null);
-
-        // Validações básicas
-        if (!name || !email || !cargo) {
-            setError("Por favor, preencha todos os campos, incluindo o cargo.");
-            return;
-        }
-        if (password !== confirmPassword) {
-            setError("As senhas não coincidem.");
-            return;
-        }
-        if (password.length < 6) {
-            setError("A senha deve ter pelo menos 6 caracteres.");
-            return;
-        }
+        if (!podeCadastrar) return;
 
         setIsLoading(true);
 
@@ -51,39 +40,29 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // 2. Atualiza o Perfil no Auth (DisplayName)
-            await updateProfile(user, {
-                displayName: name,
-            });
+            // 2. Atualiza o Perfil no Auth
+            await updateProfile(user, { displayName: name });
 
-            // 3. SALVA NO FIRESTORE (Na coleção 'usuarios')
+            // 3. Salva no Firestore
             await setDoc(doc(db, "usuarios", user.uid), {
                 uid: user.uid,
                 name: name,
                 email: email,
                 cargo: cargo,
-                role: 'user',
+                role: 'user', // Nível de acesso padrão
                 createdAt: new Date().toISOString(),
             });
 
-            // 4. Sucesso
-            setTimeout(() => {
-                if (onRegisterSuccess) {
-                    onRegisterSuccess();
-                }
-            }, 500);
+            toast.success("Cadastro realizado com sucesso!");
+            if (onRegisterSuccess) onRegisterSuccess();
 
-        } catch (firebaseError) {
-            console.error("Erro no cadastro:", firebaseError);
-            let friendlyMessage = "Ocorreu um erro no registro.";
-
-            if (firebaseError.code === 'auth/email-already-in-use') {
-                friendlyMessage = "Este email já está em uso.";
-            } else if (firebaseError.code === 'permission-denied') {
-                friendlyMessage = "Erro de permissão no Firestore. Verifique as Regras (Rules).";
+        } catch (error) {
+            console.error("Erro no cadastro:", error);
+            if (error.code === 'auth/email-already-in-use') {
+                toast.error("Este e-mail já está em uso.");
+            } else {
+                toast.error("Erro ao realizar cadastro.");
             }
-
-            setError(friendlyMessage);
         } finally {
             setIsLoading(false);
         }
@@ -92,75 +71,73 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
     return (
         <form onSubmit={handleSignUp} className="auth-form">
             <h3>Crie Sua Conta</h3>
-            <p className="auth-instruction">Cadastre-se para acessar o sistema.</p>
+            <p className="auth-instruction">Preencha os dados abaixo para acessar o portal.</p>
 
-            {/* Nome */}
-            <input
-                type="text"
-                placeholder="Seu Nome Completo"
-                className="auth-input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                disabled={isLoading}
-            />
+            <div className="input-group">
+                <label><FiUser /> Nome Completo</label>
+                <input
+                    type="text" placeholder="Nome e Sobrenome"
+                    className="auth-input" value={name}
+                    onChange={(e) => setName(e.target.value)} required
+                    disabled={isLoading}
+                />
+            </div>
 
-            {/* Email */}
-            <input
-                type="email"
-                placeholder="Seu E-mail"
-                className="auth-input"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-            />
+            <div className="input-group">
+                <label><FiMail /> E-mail</label>
+                <input
+                    type="email" placeholder="seu@email.com"
+                    className="auth-input" value={email}
+                    onChange={(e) => setEmail(e.target.value)} required
+                    disabled={isLoading}
+                />
+            </div>
 
-            {/* Seleção de Cargo */}
-            <select
-                className="auth-input"
-                value={cargo}
-                onChange={(e) => setCargo(e.target.value)}
-                required
-                disabled={isLoading}
-                style={{ backgroundColor: 'white' }}
-            >
-                <option value="" disabled>Selecione seu Cargo</option>
-                {CARGOS.map(c => (
-                    <option key={c} value={c}>{c}</option>
-                ))}
-            </select>
+            <div className="input-group">
+                <label><FiBriefcase /> Cargo</label>
+                <select
+                    className="auth-input" value={cargo}
+                    onChange={(e) => setCargo(e.target.value)} required
+                    disabled={isLoading}
+                    style={{ backgroundColor: 'white' }}
+                >
+                    <option value="" disabled>Selecione seu Cargo</option>
+                    {CARGOS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+            </div>
 
-            {/* Senha */}
-            <input
-                type="password"
-                placeholder="Senha (mín. 6 dígitos)"
-                className="auth-input"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-            />
+            <div className="input-group">
+                <label><FiLock /> Senha</label>
+                <input
+                    type="password" placeholder="Defina sua senha"
+                    className="auth-input" value={password}
+                    onChange={(e) => setPassword(e.target.value)} required
+                    disabled={isLoading}
+                />
+            </div>
 
-            {/* Confirmar Senha */}
-            <input
-                type="password"
-                placeholder="Confirme a Senha"
-                className="auth-input"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                disabled={isLoading}
-            />
-
-            {error && <p className="error-message" style={{ color: 'red', fontSize: '0.9em', textAlign: 'center' }}>{error}</p>}
+            {/* Checklist Visual Interativo */}
+            <ul className="password-checker-modern">
+                <li className={requisitos.nome ? 'met' : ''}>
+                    {requisitos.nome ? <FiCheck /> : <FiX />} Nome e Sobrenome
+                </li>
+                <li className={requisitos.minimo ? 'met' : ''}>
+                    {requisitos.minimo ? <FiCheck /> : <FiX />} Mínimo 6 caracteres
+                </li>
+                <li className={requisitos.maiuscula ? 'met' : ''}>
+                    {requisitos.maiuscula ? <FiCheck /> : <FiX />} 1 Letra Maiúscula
+                </li>
+                <li className={requisitos.especial ? 'met' : ''}>
+                    {requisitos.especial ? <FiCheck /> : <FiX />} 1 Caractere Especial
+                </li>
+            </ul>
 
             <div className="auth-actions-visual">
-                <button type="submit" className="auth-button register-btn" disabled={isLoading}>
+                <button type="submit" className="auth-button register-btn" disabled={!podeCadastrar || isLoading}>
                     {isLoading ? 'Processando...' : 'Finalizar Cadastro'}
                 </button>
                 <button type="button" onClick={onBackToLogin} className="auth-button back-btn" disabled={isLoading}>
-                    Voltar
+                    <FiArrowLeft /> Voltar
                 </button>
             </div>
         </form>

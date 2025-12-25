@@ -1,24 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { db, auth } from '../api/firebase';
-import { collection, query, getDocs, doc, updateDoc, serverTimestamp, orderBy, writeBatch } from 'firebase/firestore';
+import { collection, query, getDocs, doc, updateDoc, serverTimestamp, orderBy, writeBatch, deleteDoc } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-toastify';
+import { FiArrowLeft, FiCheck, FiX, FiClipboard, FiDownload } from 'react-icons/fi';
 import '../styles/MeusChamados.css';
 
 const PainelAnalista = () => {
     const { userData } = useAuth();
     const [chamados, setChamados] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [isExporting, setIsExporting] = useState(false);
-    const [aguardandoConfirmação, setAguardandoConfirmação] = useState(false);
+    const [aguardandoConfirmacao, setAguardandoConfirmacao] = useState(false);
+
+    const [mostrarModal, setMostrarModal] = useState(false);
     const [chamadoParaFinalizar, setChamadoParaFinalizar] = useState(null);
     const [parecerTecnico, setParecerTecnico] = useState("");
-
-    // ✅ Estados para os indicadores e unidades
-    const [stats, setStats] = useState({ abertos: 0, hoje: 0, total: 0 });
-    const [statsUnidades, setStatsUnidades] = useState({});
+    const [patrimonio, setPatrimonio] = useState("");
 
     const buscarTodosChamados = async () => {
         setLoading(true);
@@ -26,42 +25,10 @@ const PainelAnalista = () => {
             const q = query(collection(db, "chamados"), orderBy("criadoEm", "desc"));
             const querySnapshot = await getDocs(q);
             const lista = [];
-
-            let contAbertos = 0;
-            let contHoje = 0;
-            const dataHoje = new Date().toLocaleDateString('pt-BR');
-            const unidadesMap = {};
-
             querySnapshot.forEach((doc) => {
-                const dados = doc.data();
-                lista.push({ id: doc.id, ...dados });
-
-                // Contar abertos
-                if (dados.status?.toLowerCase() === 'aberto') {
-                    contAbertos++;
-
-                    // ✅ Contagem por unidade (apenas para chamados abertos)
-                    if (dados.unidade) {
-                        unidadesMap[dados.unidade] = (unidadesMap[dados.unidade] || 0) + 1;
-                    }
-                }
-
-                // Contar chamados do dia
-                if (dados.criadoEm) {
-                    const dataDoc = dados.criadoEm.toDate().toLocaleDateString('pt-BR');
-                    if (dataDoc === dataHoje) {
-                        contHoje++;
-                    }
-                }
+                lista.push({ id: doc.id, ...doc.data() });
             });
-
             setChamados(lista);
-            setStatsUnidades(unidadesMap);
-            setStats({
-                abertos: contAbertos,
-                hoje: contHoje,
-                total: lista.length
-            });
         } catch (error) {
             toast.error("Erro ao carregar chamados.");
         } finally {
@@ -73,67 +40,82 @@ const PainelAnalista = () => {
         buscarTodosChamados();
     }, []);
 
-    const exportarEZerarFila = async () => {
-        setIsExporting(true);
-        const idToast = toast.loading("Preparando exportação...");
+    // ✅ LÓGICA DE EXPORTAR E LIMPAR (IGUAL AO SEU ANTIGO)
+    const handleExportarELimpar = async () => {
         try {
+            if (chamados.length === 0) {
+                toast.warning("Não há chamados para exportar.");
+                return;
+            }
+
+            // 1. Preparar dados para o Excel
             const dadosExcel = chamados.map(c => ({
                 OS: c.numeroOs,
+                Data: c.criadoEm?.toDate().toLocaleString('pt-BR'),
                 Solicitante: c.nome,
-                Setor: c.setor,
                 Unidade: c.unidade,
+                Descricao: c.descricao,
                 Status: c.status,
-                Parecer: c.feedbackAnalista || "",
-                Data: c.criadoEm?.toDate().toLocaleString() || ""
+                Patrimonio: c.patrimonio || "N/A",
+                Parecer_Tecnico: c.feedbackAnalista || "",
+                Finalizado_Por: c.tecnicoResponsavel || "",
+                Finalizado_Em: c.finalizadoEm?.toDate().toLocaleString('pt-BR') || ""
             }));
 
-            const worksheet = XLSX.utils.json_to_sheet(dadosExcel);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Chamados");
-            XLSX.writeFile(workbook, `Backup_Chamados_${new Date().toLocaleDateString()}.xlsx`);
+            const ws = XLSX.utils.json_to_sheet(dadosExcel);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Chamados");
+            XLSX.writeFile(wb, `Relatorio_Chamados_${new Date().toLocaleDateString()}.xlsx`);
 
+            // 2. Limpar chamados do Firebase usando Batch
             const batch = writeBatch(db);
             chamados.forEach((c) => {
-                const ref = doc(db, "chamados", c.id);
-                batch.delete(ref);
+                const docRef = doc(db, "chamados", c.id);
+                batch.delete(docRef);
             });
 
             await batch.commit();
-            toast.update(idToast, { render: "Fila zerada e Excel baixado!", type: "success", isLoading: false, autoClose: 3000 });
+
+            toast.success("Dados exportados e base limpa com sucesso!");
             setChamados([]);
-            setStats({ abertos: 0, hoje: 0, total: 0 });
-            setStatsUnidades({});
-            setAguardandoConfirmação(false);
+            setAguardandoConfirmacao(false);
         } catch (error) {
-            toast.update(idToast, { render: "Erro na operação.", type: "error", isLoading: false, autoClose: 3000 });
-        } finally {
-            setIsExporting(false);
+            console.error(error);
+            toast.error("Erro ao processar limpeza.");
         }
     };
 
-    const confirmarFinalizacao = async () => {
-        if (!parecerTecnico.trim()) {
-            toast.warning("Descreva o parecer técnico antes de fechar.");
+    const abrirModalFinalizar = (chamado) => {
+        setChamadoParaFinalizar(chamado);
+        setMostrarModal(true);
+    };
+
+    const handleFinalizarChamado = async (e) => {
+        e.preventDefault();
+        if (!parecerTecnico.trim() || !patrimonio.trim()) {
+            toast.warning("Preencha todos os campos.");
             return;
         }
 
         try {
             const analistaLogado = auth.currentUser;
-            const chamadoRef = doc(db, "chamados", chamadoParaFinalizar);
+            const chamadoRef = doc(db, "chamados", chamadoParaFinalizar.id);
 
             await updateDoc(chamadoRef, {
                 status: 'fechado',
                 feedbackAnalista: parecerTecnico,
-                tecnicoResponsavel: analistaLogado.displayName || "Equipe de TI",
+                patrimonio: patrimonio.toUpperCase(),
+                tecnicoResponsavel: analistaLogado.displayName || userData?.name || "Analista",
                 finalizadoEm: serverTimestamp()
             });
 
-            toast.success("Chamado finalizado com sucesso!");
-            setChamadoParaFinalizar(null);
+            toast.success("Chamado finalizado!");
+            setMostrarModal(false);
             setParecerTecnico("");
+            setPatrimonio("");
             buscarTodosChamados();
         } catch (error) {
-            toast.error("Erro ao concluir chamado.");
+            toast.error("Erro ao finalizar.");
         }
     };
 
@@ -141,138 +123,103 @@ const PainelAnalista = () => {
         <div className="meus-chamados-container">
             <header className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div>
-                    <h1 style={{ color: '#1e293b' }}>Fila Geral (Analista)</h1>
-                    <Link to="/" className="back-link" style={{ textDecoration: 'none', color: '#6366f1', fontWeight: '500' }}>← Voltar ao Início</Link>
+                    <h1>Fila de Chamados</h1>
+                    <Link to="/" className="back-link">← Voltar</Link>
                 </div>
 
+                {/* BOTÃO DE EXPORTAR E LIMPAR */}
                 {userData?.role === 'adm' && (
                     <div style={{ display: 'flex', gap: '10px' }}>
-                        {!aguardandoConfirmação ? (
-                            <button
-                                onClick={() => setAguardandoConfirmação(true)}
-                                style={{ backgroundColor: '#475569', color: 'white', border: 'none', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', transition: 'all 0.2s' }}
-                            >
-                                📥 Exportar e Limpar
+                        {!aguardandoConfirmacao ? (
+                            <button onClick={() => setAguardandoConfirmacao(true)} className="btn-action-remove" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <FiDownload /> Exportar e Zerar Base
                             </button>
                         ) : (
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: '#fee2e2', padding: '8px 12px', borderRadius: '8px', border: '1px solid #fecaca' }}>
-                                <span style={{ color: '#991b1b', fontSize: '0.85rem', fontWeight: 'bold' }}>Tem certeza?</span>
-                                <button onClick={exportarEZerarFila} style={{ backgroundColor: '#dc2626', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}>Sim</button>
-                                <button onClick={() => setAguardandoConfirmação(false)} style={{ backgroundColor: '#94a3b8', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}>Não</button>
+                            <div className="confirm-action-box" style={{ background: '#fee2e2', padding: '10px', borderRadius: '8px', border: '1px solid #ef4444' }}>
+                                <small style={{ color: '#991b1b', fontWeight: 'bold' }}>Deseja baixar o Excel e APAGAR tudo?</small>
+                                <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+                                    <button onClick={handleExportarELimpar} className="btn-sim" style={{ background: '#ef4444', color: 'white', border: 'none', padding: '5px 15px', borderRadius: '4px', cursor: 'pointer' }}>Sim, Limpar</button>
+                                    <button onClick={() => setAguardandoConfirmacao(false)} className="btn-nao" style={{ background: '#64748b', color: 'white', border: 'none', padding: '5px 15px', borderRadius: '4px', cursor: 'pointer' }}>Não</button>
+                                </div>
                             </div>
                         )}
                     </div>
                 )}
             </header>
 
-            {/* ✅ SEÇÃO DE CARDS DE INDICADORES PRINCIPAIS */}
-            {!loading && (
-                <>
-                    <div className="stats-dashboard" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '15px' }}>
-                        <div className="stat-card" style={{ background: '#fff', padding: '15px', borderRadius: '10px', borderLeft: '5px solid #6366f1', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                            <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#64748b' }}>TOTAL NA FILA</span>
-                            <h2 style={{ fontSize: '1.6rem', margin: '5px 0', color: '#1e293b' }}>{stats.total}</h2>
+            {/* MODAL DE FINALIZAÇÃO */}
+            {mostrarModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                            <h2>Encerrar Chamado #{chamadoParaFinalizar?.numeroOs}</h2>
+                            <button onClick={() => setMostrarModal(false)} className="btn-close-modal"><FiX /></button>
                         </div>
-                        <div className="stat-card" style={{ background: '#fff', padding: '15px', borderRadius: '10px', borderLeft: '5px solid #f59e0b', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                            <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#64748b' }}>⏳ AGUARDANDO (ABERTOS)</span>
-                            <h2 style={{ fontSize: '1.6rem', margin: '5px 0', color: '#d97706' }}>{stats.abertos}</h2>
-                        </div>
-                        <div className="stat-card" style={{ background: '#fff', padding: '15px', borderRadius: '10px', borderLeft: '5px solid #10b981', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                            <span style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#64748b' }}>🆕 CHAMADOS DE HOJE</span>
-                            <h2 style={{ fontSize: '1.6rem', margin: '5px 0', color: '#059669' }}>{stats.hoje}</h2>
-                        </div>
-                    </div>
 
-                    {/* ✅ SEÇÃO DE INDICADORES POR UNIDADE */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '10px', marginBottom: '25px' }}>
-                        {Object.entries(statsUnidades).length > 0 ? (
-                            Object.entries(statsUnidades).map(([nomeUnidade, qtd]) => (
-                                <div key={nomeUnidade} style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#475569' }}>{nomeUnidade}</span>
-                                    <span style={{ background: '#6366f1', color: 'white', padding: '2px 8px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 'bold' }}>{qtd}</span>
-                                </div>
-                            ))
-                        ) : (
-                            <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic' }}>Nenhum chamado aberto por unidade.</div>
-                        )}
+                        <form onSubmit={handleFinalizarChamado}>
+                            <div className="input-group" style={{ marginBottom: '15px' }}>
+                                <label>Patrimônio / TAG (ou S/P)</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    style={{ textTransform: 'uppercase' }}
+                                    placeholder="Número do patrimônio"
+                                    value={patrimonio}
+                                    onChange={(e) => setPatrimonio(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="input-group">
+                                <label>Parecer Técnico</label>
+                                <textarea
+                                    className="form-input"
+                                    style={{ minHeight: '100px' }}
+                                    placeholder="O que foi feito?"
+                                    value={parecerTecnico}
+                                    onChange={(e) => setParecerTecnico(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="modal-actions-row" style={{ marginTop: '20px' }}>
+                                <button type="button" onClick={() => setMostrarModal(false)} className="btn-cancelar">Cancelar</button>
+                                <button type="submit" className="btn-salvar-modern">Finalizar Chamado</button>
+                            </div>
+                        </form>
                     </div>
-                </>
+                </div>
             )}
 
-            {loading ? <div className="loading-state">Carregando chamados...</div> : (
-                <div className="table-responsive" style={{ background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>
-                    <table className="chamados-table">
+            {/* TABELA */}
+            {loading ? <div className="loading">Carregando...</div> : (
+                <div className="table-wrapper">
+                    <table className="modern-table">
                         <thead>
                             <tr>
                                 <th>OS</th>
                                 <th>Solicitante</th>
-                                <th>Setor</th>
-                                <th>Descrição / Parecer</th>
                                 <th>Unidade</th>
-                                <th style={{ textAlign: 'center' }}>Ações</th>
+                                <th>Status</th>
+                                <th>Ação</th>
                             </tr>
                         </thead>
                         <tbody>
                             {chamados.map((item) => (
-                                <tr key={item.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                    <td className="os-cell" style={{ fontWeight: 'bold', color: '#4f46e5' }}>#{item.numeroOs || 'S/N'}</td>
-                                    <td>
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <span style={{ fontWeight: '600' }}>{item.nome}</span>
-                                            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{item.prioridade}</span>
-                                        </div>
-                                    </td>
-                                    <td>{item.setor}</td>
-                                    <td style={{ maxWidth: '350px' }}>
-                                        {item.status === 'fechado' ? (
-                                            <div style={{ background: '#f0fdf4', padding: '8px', borderRadius: '6px', borderLeft: '4px solid #22c55e' }}>
-                                                <small style={{ fontWeight: 'bold', color: '#166534' }}>PARECER TÉCNICO:</small>
-                                                <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#166534' }}>{item.feedbackAnalista}</p>
-                                            </div>
-                                        ) : (
-                                            <p style={{ fontSize: '0.85rem', color: '#475569' }}>{item.descricao}</p>
-                                        )}
-                                    </td>
+                                <tr key={item.id}>
+                                    <td>#{item.numeroOs}</td>
+                                    <td>{item.nome}</td>
                                     <td>{item.unidade}</td>
-                                    <td style={{ minWidth: '180px' }}>
+                                    <td>
+                                        <span className={`badge-role ${item.status === 'aberto' ? 'user' : 'analista'}`} style={{ background: item.status === 'aberto' ? '#fee2e2' : '#dcfce7', color: item.status === 'aberto' ? '#991b1b' : '#166534' }}>
+                                            {item.status}
+                                        </span>
+                                    </td>
+                                    <td>
                                         {item.status === 'aberto' ? (
-                                            chamadoParaFinalizar === item.id ? (
-                                                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                                                    <textarea
-                                                        value={parecerTecnico}
-                                                        onChange={(e) => setParecerTecnico(e.target.value)}
-                                                        placeholder="O que foi feito para resolver?"
-                                                        style={{ width: '100%', minHeight: '80px', borderRadius: '6px', border: '1px solid #cbd5e1', padding: '8px', fontSize: '0.85rem', marginBottom: '8px', outline: 'none' }}
-                                                    />
-                                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                                        <button
-                                                            onClick={confirmarFinalizacao}
-                                                            style={{ flex: 1, backgroundColor: '#22c55e', color: 'white', border: 'none', padding: '8px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.8rem' }}
-                                                        >
-                                                            Confirmar
-                                                        </button>
-                                                        <button
-                                                            onClick={() => { setChamadoParaFinalizar(null); setParecerTecnico(""); }}
-                                                            style={{ backgroundColor: '#94a3b8', color: 'white', border: 'none', padding: '8px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.8rem' }}
-                                                        >
-                                                            Sair
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <button
-                                                    onClick={() => setChamadoParaFinalizar(item.id)}
-                                                    style={{ width: '100%', backgroundColor: '#6366f1', color: 'white', border: 'none', padding: '10px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', transition: 'background 0.2s' }}
-                                                    onMouseOver={(e) => e.target.style.backgroundColor = '#4f46e5'}
-                                                    onMouseOut={(e) => e.target.style.backgroundColor = '#6366f1'}
-                                                >
-                                                    Finalizar Chamado
-                                                </button>
-                                            )
+                                            <button onClick={() => abrirModalFinalizar(item)} className="btn-abrir"><FiClipboard /> Finalizar</button>
                                         ) : (
-                                            <div style={{ textAlign: 'center', color: '#22c55e', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                                                <span>✓</span> CONCLUÍDO
-                                            </div>
+                                            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Concluído por: {item.tecnicoResponsavel}</span>
                                         )}
                                     </td>
                                 </tr>

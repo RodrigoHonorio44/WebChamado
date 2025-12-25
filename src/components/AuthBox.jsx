@@ -11,12 +11,11 @@ const AuthBox = () => {
     const [message, setMessage] = useState('Informe suas credenciais.');
     const [isLoading, setIsLoading] = useState(false);
 
-    // 🔄 Estado para controlar a visão: 'login', 'register' ou 'reset'
+    // 🔄 Visões: 'login', 'register' ou 'reset'
     const [view, setView] = useState('login');
 
     const navigate = useNavigate();
 
-    // --- FUNÇÃO PARA ENVIAR LINK DE REDEFINIÇÃO ---
     const handleResetPassword = async (e) => {
         e.preventDefault();
         if (!email) {
@@ -26,10 +25,10 @@ const AuthBox = () => {
         setIsLoading(true);
         try {
             await sendPasswordResetEmail(auth, email);
-            setMessage("✅ Link enviado! Verifique seu e-mail para cadastrar a nova senha.");
+            setMessage("✅ Link enviado! Verifique seu e-mail.");
             setTimeout(() => setView('login'), 6000);
         } catch (error) {
-            setMessage("❌ Erro ao enviar link. Verifique se o e-mail está correto.");
+            setMessage("❌ Erro ao enviar link.");
         } finally {
             setIsLoading(false);
         }
@@ -40,21 +39,19 @@ const AuthBox = () => {
         setIsLoading(true);
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            // ➡️ ATUALIZADO: Redireciona para a Home em vez de ir direto para chamados
             navigate('/');
         } catch (error) {
-            setMessage("❌ Erro: E-mail ou senha incorretos.");
+            setMessage("❌ E-mail ou senha incorretos.");
         } finally {
             setIsLoading(false);
         }
     };
 
-    // 1️⃣ VISÃO DE CADASTRO
+    // 1️⃣ VISÃO DE CADASTRO (Renderiza o formulário com checklist)
     if (view === 'register') {
         return (
             <div className="auth-box">
                 <SignUpForm
-                    // ➡️ ATUALIZADO: Redireciona para a Home após cadastro
                     onRegisterSuccess={() => navigate('/')}
                     onBackToLogin={() => setView('login')}
                 />
@@ -62,23 +59,18 @@ const AuthBox = () => {
         );
     }
 
-    // 2️⃣ VISÃO DE RECUPERAÇÃO (ESQUECI SENHA)
+    // 2️⃣ VISÃO DE RECUPERAÇÃO
     if (view === 'reset') {
         return (
             <div className="auth-box">
                 <h3>Recuperar Senha</h3>
-                <p className="auth-instruction">Digite seu e-mail para receber o link de redefinição.</p>
-
+                <p className="auth-instruction">Enviaremos um link para o seu e-mail.</p>
                 <form onSubmit={handleResetPassword}>
                     <input
-                        type="email"
-                        placeholder="Seu e-mail cadastrado"
-                        className="auth-input"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
+                        type="email" placeholder="E-mail cadastrado"
+                        className="auth-input" value={email}
+                        onChange={(e) => setEmail(e.target.value)} required
                     />
-
                     <div className="auth-actions-visual">
                         <button type="submit" className="auth-button login-btn" disabled={isLoading}>
                             {isLoading ? 'Enviando...' : 'Enviar Link'}
@@ -93,28 +85,22 @@ const AuthBox = () => {
         );
     }
 
-    // 3️⃣ VISÃO DE LOGIN (PADRÃO)
+    // 3️⃣ VISÃO DE LOGIN
     return (
         <div className="auth-box">
             <h3>Área de Acesso</h3>
-            <p className="auth-instruction">Use seu e-mail e senha para acessar o portal.</p>
+            <p className="auth-instruction">Acesse o portal com seus dados.</p>
 
             <form onSubmit={handleSignIn}>
                 <input
-                    type="email"
-                    placeholder="Seu E-mail"
-                    className="auth-input"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
+                    type="email" placeholder="Seu E-mail"
+                    className="auth-input" value={email}
+                    onChange={(e) => setEmail(e.target.value)} required
                 />
                 <input
-                    type="password"
-                    placeholder="Sua Senha"
-                    className="auth-input"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
+                    type="password" placeholder="Sua Senha"
+                    className="auth-input" value={password}
+                    onChange={(e) => setPassword(e.target.value)} required
                 />
 
                 <div className="forgot-password-container">
@@ -128,7 +114,7 @@ const AuthBox = () => {
                         {isLoading ? 'Entrando...' : 'Entrar'}
                     </button>
                     <button type="button" className="auth-button register-btn" onClick={() => setView('register')}>
-                        Cadastro
+                        Criar Conta
                     </button>
                 </div>
             </form>

@@ -1,167 +1,195 @@
-/* src/styles/AbrirChamado.css */
+/* ==================================== */
+/* src/styles/AbrirChamado.css          */
+/* ==================================== */
 
-/* --- Container Principal --- */
-.chamado-container {
-    max-width: 700px;
-    margin: 50px auto;
+/* --- Layout da Página --- */
+.chamado-page {
+    background-color: #f4f7f9;
+    min-height: 100vh;
+    padding: 20px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* --- Barra Superior de Navegação --- */
+.chamado-nav {
+    max-width: 800px;
+    margin: 0 auto 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-back-home {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #fff;
+    border: 1px solid #d1d5db;
+    padding: 8px 16px;
+    border-radius: 8px;
+    color: #374151;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-back-home:hover {
+    background-color: #f9fafb;
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+/* --- Card do Formulário --- */
+.chamado-container-card {
+    max-width: 800px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
     padding: 30px;
-    background-color: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    position: relative;
-    /* Essencial para posicionar o .back-button */
 }
 
-/* --- Títulos --- */
-.chamado-title {
-    color: #2c3e50;
+.chamado-header {
     text-align: center;
-    margin-bottom: 10px;
-    font-size: 2em;
-    margin-top: 15px;
-    /* Espaço para o botão de voltar acima */
-}
-
-.chamado-subtitle {
-    text-align: center;
-    color: #7f8c8d;
     margin-bottom: 30px;
 }
 
-/* 🚀 LINK INÍCIO (TAG DISCRETA) 🚀 */
-.back-button {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    display: inline-flex;
+.icon-circle {
+    background: #3b82f6;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
     align-items: center;
-    gap: 6px;
-    text-decoration: none;
-    color: #34495e;
-    font-weight: 500;
-    font-size: 0.9em;
-    padding: 6px 12px;
-    border: 1px solid #bdc3c7;
-    border-radius: 4px;
-    background-color: #f8f9fa;
-    cursor: pointer;
-    transition: all 0.2s;
-    z-index: 10;
+    justify-content: center;
+    margin: 0 auto 15px;
 }
 
-.back-button:hover {
-    color: #3498db;
-    background-color: #ffffff;
-    border-color: #3498db;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+.chamado-header h2 {
+    color: #111827;
+    margin-bottom: 5px;
 }
 
-/* --- Formulário e Grupos --- */
-.chamado-form {
-    padding-top: 10px;
-}
-
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    color: #34495e;
+.chamado-header p {
+    color: #6b7280;
     font-size: 0.95rem;
 }
 
-.form-input,
-.form-textarea,
-.form-group select {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #bdc3c7;
-    border-radius: 6px;
-    box-sizing: border-box;
+/* --- Seções do Formulário --- */
+.form-section {
+    margin-bottom: 25px;
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 20px;
+}
+
+.form-section h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #374151;
+    margin-bottom: 15px;
     font-size: 1rem;
-    transition: border-color 0.3s, box-shadow 0.3s;
+    border-left: 4px solid #3b82f6;
+    padding-left: 10px;
 }
 
-.form-input:focus,
-.form-textarea:focus,
-.form-group select:focus {
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-    outline: none;
+/* --- Grid de Inputs --- */
+.grid-2-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
 }
 
-/* --- ESTILO PARA CAMPO DE NOME AUTOMÁTICO (READONLY) --- */
-.input-readonly {
-    background-color: #f1f5f9 !important;
-    /* Fundo cinza suave */
-    color: #64748b !important;
-    /* Texto em tom pastel */
-    border: 1px solid #e2e8f0 !important;
-    cursor: not-allowed;
-    /* Ícone de bloqueio ao passar o mouse */
-    font-weight: 500;
+.form-input-wrapper {
+    margin-bottom: 15px;
 }
 
-.form-textarea {
+.form-input-wrapper label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4b5563;
+    margin-bottom: 5px;
+}
+
+.form-input-wrapper input,
+.form-input-wrapper select,
+.form-input-wrapper textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+}
+
+.form-input-wrapper textarea {
+    min-height: 100px;
     resize: vertical;
-    min-height: 150px;
+}
+
+/* --- Estados Específicos --- */
+.input-locked {
+    background-color: #f9fafb !important;
+    color: #9ca3af !important;
+    cursor: not-allowed;
+    border-style: dashed !important;
+}
+
+/* --- Cores de Prioridade --- */
+.select-priority.alta {
+    border-left: 4px solid #ef4444;
+}
+
+.select-priority.média {
+    border-left: 4px solid #f59e0b;
+}
+
+.select-priority.baixa {
+    border-left: 4px solid #10b981;
 }
 
 /* --- Botão de Envio --- */
-.submit-button {
+.btn-submit-chamado {
     width: 100%;
     padding: 14px;
-    background-color: #27ae60;
+    background-color: #10b981;
     color: white;
     border: none;
-    border-radius: 6px;
-    font-size: 1.1em;
-    font-weight: bold;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.1s;
+    transition: background 0.2s;
 }
 
-.submit-button:hover:not(:disabled) {
-    background-color: #2ecc71;
+.btn-submit-chamado:hover:not(:disabled) {
+    background-color: #059669;
 }
 
-.submit-button:active:not(:disabled) {
-    transform: scale(0.98);
-}
-
-.submit-button:disabled {
-    background-color: #95a5a6;
+.btn-submit-chamado:disabled {
+    background-color: #d1d5db;
     cursor: not-allowed;
 }
 
-/* --- Mensagens de Feedback --- */
-.success-message {
-    padding: 15px;
-    margin-bottom: 20px;
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-    border-radius: 6px;
+/* --- Alertas --- */
+.alert-success {
+    background-color: #ecfdf5;
+    color: #065f46;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #a7f3d0;
     text-align: center;
+    margin-bottom: 20px;
 }
 
 /* --- Responsividade --- */
-@media (max-width: 768px) {
-    .chamado-container {
-        margin: 10px;
-        padding: 20px;
-        box-shadow: none;
-        border: 1px solid #eee;
+@media (max-width: 600px) {
+    .grid-2-col {
+        grid-template-columns: 1fr;
     }
 
-    .back-button {
-        position: static;
-        display: inline-flex;
-        margin-bottom: 20px;
-        width: auto;
+    .chamado-container-card {
+        padding: 20px;
     }
 }
