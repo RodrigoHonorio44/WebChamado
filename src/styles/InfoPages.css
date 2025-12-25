@@ -1,8 +1,10 @@
+/* --- PÁGINAS DE INFORMAÇÃO (SUPORTE / TERMOS) --- */
+
 .info-page-container {
     max-width: 800px;
     margin: 40px auto;
     padding: 20px;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
     color: #1e293b;
     line-height: 1.6;
 }
@@ -18,6 +20,7 @@
     cursor: pointer;
     margin-bottom: 20px;
     transition: transform 0.2s;
+    font-size: 1rem;
 }
 
 .btn-voltar-info:hover {
@@ -36,9 +39,10 @@
     font-size: 2rem;
     margin-bottom: 24px;
     color: #0f172a;
-    border-bottom: 2px solid #3b82f6;
+    border-bottom: 3px solid #3b82f6;
     padding-bottom: 10px;
-    display: inline-block;
+    display: block;
+    /* Mudado para block para ocupar a largura no mobile */
 }
 
 .info-card h2 {
@@ -46,12 +50,17 @@
     margin-top: 30px;
     margin-bottom: 15px;
     color: #334155;
+    font-weight: 700;
 }
 
 .info-card p,
 .info-card li {
     color: #64748b;
     margin-bottom: 12px;
+}
+
+.info-card ul {
+    padding-left: 20px;
 }
 
 .faq-section {
@@ -67,12 +76,62 @@
 .faq-item strong {
     color: #1e293b;
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 8px;
+    font-size: 1.1rem;
 }
 
 .contato-suporte {
     background: #eff6ff;
-    padding: 20px;
+    padding: 25px;
     border-radius: 12px;
     margin-top: 30px;
+    border: 1px dashed #3b82f6;
+}
+
+/* --- RESPONSIVIDADE (CELULAR) --- */
+
+@media (max-width: 768px) {
+    .info-page-container {
+        margin: 10px auto;
+        /* Reduz margem superior no mobile */
+        padding: 15px;
+    }
+
+    .info-card {
+        padding: 25px 20px;
+        /* Reduz o padding interno para sobrar espaço pro texto */
+        border-radius: 12px;
+    }
+
+    .info-card h1 {
+        font-size: 1.5rem;
+        /* Diminui o título principal no celular */
+        margin-bottom: 20px;
+    }
+
+    .info-card h2 {
+        font-size: 1.1rem;
+        margin-top: 25px;
+    }
+
+    .contato-suporte {
+        padding: 15px;
+    }
+
+    .btn-voltar-info {
+        font-size: 0.9rem;
+        /* Botão um pouco menor no toque */
+        padding: 10px 0;
+    }
+}
+
+/* Ajuste para telas muito pequenas (iPhone SE, etc) */
+@media (max-width: 480px) {
+    .info-card h1 {
+        font-size: 1.3rem;
+    }
+
+    .faq-item strong {
+        font-size: 1rem;
+    }
 }

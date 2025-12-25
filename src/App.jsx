@@ -36,11 +36,10 @@ const AppContent = () => {
   const resetarTimer = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
 
-    // Só ativa o timer se houver um usuário logado
     if (user) {
       timerRef.current = setTimeout(() => {
         handleLogoutAutomatico();
-      }, 30 * 60 * 1000); // 30 minutos
+      }, 30 * 60 * 1000);
     }
   };
 
@@ -52,7 +51,6 @@ const AppContent = () => {
 
   useEffect(() => {
     if (user) {
-      // Eventos que resetam o cronômetro de inatividade
       window.addEventListener("mousemove", resetarTimer);
       window.addEventListener("keypress", resetarTimer);
       window.addEventListener("scroll", resetarTimer);
@@ -70,20 +68,31 @@ const AppContent = () => {
     };
   }, [user]);
 
-  if (loading) return null;
+  // --- TELA DE CARREGAMENTO COM SPINNER ---
+  if (loading) {
+    return (
+      <div className="loading-overlay">
+        <div className="spinner"></div>
+        <p className="loading-text">Verificando credenciais...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="App" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <main style={{ flex: '1' }}>
         <Routes>
+          {/* ROTA RAIZ */}
           <Route path="/" element={user ? <Navigate to="/home" /> : <Login />} />
 
+          {/* 🟢 PAINEL PRINCIPAL (PROTEGIDO) */}
           <Route path="/home" element={
             <ProtectedRoute>
               <Home />
             </ProtectedRoute>
           } />
 
+          {/* 🟢 ROTAS DO USUÁRIO COMUM */}
           <Route path="/abrir-chamado" element={
             <ProtectedRoute>
               <AbrirChamado />
@@ -96,12 +105,14 @@ const AppContent = () => {
             </ProtectedRoute>
           } />
 
+          {/* 🔵 ROTA DO ANALISTA */}
           <Route path="/painel-analista" element={
             <ProtectedRoute roleRequired="analista">
               <PainelAnalista />
             </ProtectedRoute>
           } />
 
+          {/* 🔴 ROTAS DO ADM */}
           <Route path="/admin/usuarios" element={
             <ProtectedRoute roleRequired="adm">
               <AdminUsuarios />
@@ -114,6 +125,7 @@ const AppContent = () => {
             </ProtectedRoute>
           } />
 
+          {/* 📦 GESTÃO DE PATRIMÔNIO E INVENTÁRIO */}
           <Route path="/admin/cadastro-patrimonio" element={
             <ProtectedRoute roleRequired="adm">
               <CadastroEquipamento />
@@ -138,10 +150,16 @@ const AppContent = () => {
             </ProtectedRoute>
           } />
 
+          {/* 📄 ROTAS PÚBLICAS */}
           <Route path="/ajuda" element={<Suporte />} />
           <Route path="/termos" element={<Termos />} />
 
-          <Route path="*" element={<div style={{ padding: '50px', textAlign: 'center' }}><h2>404 - Página Não Encontrada</h2></div>} />
+          {/* Rota 404 */}
+          <Route path="*" element={
+            <div style={{ padding: '50px', textAlign: 'center' }}>
+              <h2>404 - Página Não Encontrada</h2>
+            </div>
+          } />
         </Routes>
       </main>
 

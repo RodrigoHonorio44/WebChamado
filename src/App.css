@@ -1,9 +1,68 @@
+/* Limpeza do padrão do Vite e ajustes de layout */
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  /* Alinhamento à esquerda é melhor para sistemas */
 }
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: initial;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  /* Fundo levemente cinza para destacar os cards */
+}
+
+/* --- ESTILOS DO LOADING / SPINNER --- */
+
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100vw;
+  background-color: #ffffff;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #e2e8f0;
+  border-top: 5px solid #1e3a8a;
+  /* Azul Escuro da Sala do Patrimônio */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  color: #1e3a8a;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+}
+
+/* --- AJUSTES DE LOGOS E TRANSIÇÕES --- */
 
 .logo {
   height: 6em;
@@ -11,32 +70,18 @@
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+  filter: drop-shadow(0 0 2em #1e3a8aa1);
 }
 
 .card {
   padding: 2em;
 }
 
-.read-the-docs {
-  color: #888;
+/* Responsividade básica para o root */
+@media (max-width: 768px) {
+  #root {
+    padding: 0;
+  }
 }
