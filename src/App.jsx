@@ -10,8 +10,8 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 // --- PÁGINAS ATUALIZADAS ---
-import Login from './pages/Login'; // ✅ Sua nova página de Login
-import Home from './pages/Home';   // ✅ Agora apenas o Painel Interno
+import Login from './pages/Login';
+import Home from './pages/Home';
 import AbrirChamado from './pages/AbrirChamado';
 import MeusChamados from './pages/MeusChamados';
 
@@ -26,18 +26,20 @@ import SaidaEquipamento from './pages/SaidaEquipamento';
 import Inventario from './pages/Inventario';
 import Estoque from './pages/Estoque';
 
+// ✅ NOVAS PÁGINAS COMERCIAIS
+import Suporte from './pages/Suporte';
+import Termos from './pages/Termos';
+
 const AppContent = () => {
   const { user, loading } = useAuth();
 
-  if (loading) return null; // Evita piscar telas antes de checar login
+  if (loading) return null;
 
   return (
     <div className="App" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <main style={{ flex: '1' }}>
         <Routes>
-          {/* ROTA RAIZ: 
-            Se logado, vai para /home. Se não, mostra o Login.
-          */}
+          {/* ROTA RAIZ */}
           <Route path="/" element={
             user ? <Navigate to="/home" /> : <Login />
           } />
@@ -107,6 +109,11 @@ const AppContent = () => {
             </ProtectedRoute>
           } />
 
+          {/* 📄 ROTAS PÚBLICAS (SUPORTE E TERMOS) */}
+          {/* Deixamos fora do ProtectedRoute para que o usuário possa ler mesmo sem login */}
+          <Route path="/ajuda" element={<Suporte />} />
+          <Route path="/termos" element={<Termos />} />
+
           {/* Rota 404 */}
           <Route path="*" element={<div style={{ padding: '50px', textAlign: 'center' }}><h2>404 - Página Não Encontrada</h2></div>} />
         </Routes>
@@ -123,7 +130,6 @@ const AppContent = () => {
   );
 };
 
-// Componente principal envolvendo tudo com o Router e AuthProvider
 const App = () => (
   <Router>
     <AuthProvider>

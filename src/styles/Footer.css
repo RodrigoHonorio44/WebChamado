@@ -1,0 +1,106 @@
+.footer-modern {
+    width: 100%;
+    padding: 30px 0;
+    background-color: #f8fafc;
+    /* Um cinza bem claro para destacar do fundo branco */
+    border-top: 1px solid #e2e8f0;
+    margin-top: 60px;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Área da Marca */
+.footer-brand-area {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.brand-name {
+    font-weight: 800;
+    color: #0f172a;
+    font-size: 1rem;
+}
+
+.version-tag {
+    font-size: 0.7rem;
+    background: #e2e8f0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #475569;
+    margin-left: 8px;
+}
+
+.copyright {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+/* Links */
+.footer-nav {
+    display: flex;
+    gap: 24px;
+}
+
+.footer-link {
+    text-decoration: none;
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.2s;
+}
+
+.footer-link:hover {
+    color: #3b82f6;
+}
+
+/* Assinatura do Dev */
+.developer-signature {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+.dev-link {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 2px;
+}
+
+.dev-link:hover {
+    text-decoration: underline;
+}
+
+/* Responsividade */
+@media (max-width: 850px) {
+    .footer-content {
+        flex-direction: column;
+        gap: 25px;
+        text-align: center;
+    }
+
+    .developer-signature {
+        text-align: center;
+    }
+
+    .dev-link {
+        justify-content: center;
+    }
+}

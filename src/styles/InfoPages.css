@@ -1,0 +1,78 @@
+.info-page-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    font-family: 'Segoe UI', sans-serif;
+    color: #1e293b;
+    line-height: 1.6;
+}
+
+.btn-voltar-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: #3b82f6;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: transform 0.2s;
+}
+
+.btn-voltar-info:hover {
+    transform: translateX(-5px);
+}
+
+.info-card {
+    background: white;
+    padding: 40px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.info-card h1 {
+    font-size: 2rem;
+    margin-bottom: 24px;
+    color: #0f172a;
+    border-bottom: 2px solid #3b82f6;
+    padding-bottom: 10px;
+    display: inline-block;
+}
+
+.info-card h2 {
+    font-size: 1.25rem;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    color: #334155;
+}
+
+.info-card p,
+.info-card li {
+    color: #64748b;
+    margin-bottom: 12px;
+}
+
+.faq-section {
+    margin-top: 20px;
+}
+
+.faq-item {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.faq-item strong {
+    color: #1e293b;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.contato-suporte {
+    background: #eff6ff;
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 30px;
+}
