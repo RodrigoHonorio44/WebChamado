@@ -1,5 +1,6 @@
 /* --- ESTILOS EXCLUSIVOS DA SALA DO PATRIMÔNIO --- */
 
+/* Container Principal */
 .estoque-layout {
     width: 96%;
     max-width: 1650px;
@@ -11,13 +12,14 @@
     font-family: 'Inter', 'Segoe UI', sans-serif;
 }
 
-/* Header Configurado */
+/* Header */
 .estoque-layout .estoque-header {
     background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
     padding: 35px 45px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 20px;
 }
 
 .estoque-layout .estoque-header h1 {
@@ -30,19 +32,18 @@
     gap: 15px;
 }
 
-/* CORREÇÃO: Subtítulo em Branco */
-.estoque-layout .estoque-header p {
-    color: rgba(255, 255, 255, 0.9) !important;
-    margin: 5px 0 0 0;
-    font-size: 15px;
+/* Subtítulo e link de voltar com letras brancas */
+.estoque-layout .estoque-header p,
+.estoque-layout .back-link {
+    color: #ffffff !important;
 }
 
-/* CORREÇÃO: Alinhamento dos botões superiores */
+/* Botões Superiores - Lado a lado no PC */
 .estoque-layout .header-actions {
     display: flex;
+    flex-direction: row;
     align-items: center;
     gap: 15px;
-    /* Espaço entre os botões */
 }
 
 .estoque-layout .btn-atualizar {
@@ -55,32 +56,34 @@
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     white-space: nowrap;
 }
 
 .estoque-layout .back-link {
-    color: white;
     text-decoration: none;
     font-weight: 600;
     font-size: 14px;
     padding: 12px 20px;
     border-radius: 10px;
     background: rgba(255, 255, 255, 0.15);
-    transition: 0.3s;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    white-space: nowrap;
 }
 
-/* Tabela */
+/* Tabela - Configuração para Monitor 27" e Scroll Mobile */
 .estoque-layout .tabela-container {
     padding: 40px;
     background: white;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .estoque-layout table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
+    table-layout: fixed;
+    min-width: 1000px;
 }
 
 .estoque-layout th {
@@ -89,24 +92,58 @@
     font-weight: 700;
     text-transform: uppercase;
     font-size: 12px;
-    padding: 20px 15px;
+    padding: 20px 25px;
     text-align: left;
     border-bottom: 2px solid #e2e8f0;
 }
 
 .estoque-layout td {
-    padding: 20px 15px;
+    padding: 20px 25px;
     border-bottom: 1px solid #f1f5f9;
     font-size: 15px;
     color: #334155;
+    white-space: nowrap;
 }
 
-.estoque-layout .linha-estoque:hover {
-    background-color: #f1f5f9;
-    cursor: pointer;
+/* Larguras para Monitor 27" */
+.estoque-layout th:nth-child(1) {
+    width: 250px;
 }
 
-/* Modal e Formulários */
+/* Equipamento */
+.estoque-layout th:nth-child(2) {
+    width: 180px;
+}
+
+/* Patrimônio */
+.estoque-layout th:nth-child(3) {
+    width: 150px;
+}
+
+/* Estado */
+.estoque-layout th:nth-child(4) {
+    width: 100px;
+}
+
+/* Qtd */
+.estoque-layout th:nth-child(5) {
+    width: auto;
+}
+
+/* Observações */
+
+/* Status "Aguardando Manutenção" com Letra Branca */
+.estoque-layout .status-badge.manutenção,
+.estoque-layout .status-manutencao {
+    background-color: #ef4444 !important;
+    color: #ffffff !important;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+/* --- ESTILOS DO MODAL E FORMULÁRIO (VISUAL NOVO) --- */
 .estoque-modal-overlay {
     position: fixed;
     top: 0;
@@ -119,74 +156,121 @@
     justify-content: center;
     align-items: center;
     z-index: 9999;
+    padding: 20px;
 }
 
 .estoque-modal-content {
     background: white;
-    padding: 40px;
+    padding: 35px;
     border-radius: 15px;
-    width: 90%;
-    max-width: 550px;
+    width: 100%;
+    max-width: 500px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
-/* CORREÇÃO: Botões do Modal Lado a Lado */
+.estoque-modal-content h2 {
+    margin-top: 0;
+    color: #1e293b;
+    font-size: 22px;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.item-details-card {
+    background: #eff6ff;
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #2563eb;
+    font-size: 14px;
+}
+
+/* Campo Especial S/P */
+.alerta-sp-form {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.alerta-sp-form label {
+    color: #9a3412;
+    font-weight: 800;
+    font-size: 11px;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.estoque-form-group {
+    margin-bottom: 18px;
+}
+
+.estoque-form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.estoque-form-group input,
+.estoque-form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
 .modal-actions-container {
     display: flex;
     gap: 12px;
     margin-top: 25px;
 }
 
-.btn-registrar-patrimonio {
+.btn-confirmar-transferencia {
     flex: 2;
-    /* Botão de ação maior */
     background: #10b981;
     color: white;
     border: none;
-    padding: 15px;
+    padding: 14px;
     border-radius: 10px;
     font-weight: 700;
     cursor: pointer;
 }
 
-.btn-cancelar-modal {
+.btn-modal-cancelar {
     flex: 1;
-    /* Botão cancelar menor */
     background: #f1f5f9;
     color: #64748b;
-    border: 1px solid #e2e8f0;
-    padding: 15px;
+    border: none;
+    padding: 14px;
     border-radius: 10px;
     font-weight: 700;
     cursor: pointer;
 }
 
-.estoque-form-group {
-    margin-bottom: 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
+/* --- RESPONSIVIDADE (MOBILE) --- */
+@media (max-width: 768px) {
+    .estoque-layout .estoque-header {
+        padding: 20px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
 
-.estoque-form-group label {
-    color: #64748b;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-}
+    .estoque-layout .header-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
 
-.estoque-form-group input,
-.estoque-form-group select {
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-}
-
-.alerta-sp {
-    background: #fffbeb;
-    border: 1px solid #fcd34d;
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    color: #92400e;
+    .estoque-layout table {
+        table-layout: auto;
+        min-width: 850px;
+    }
 }

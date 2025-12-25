@@ -17,8 +17,6 @@
 .admin-painel-layout .cadastro-equip-header {
     background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
     padding: 35px 45px;
-    border-bottom: none;
-    margin-bottom: 0;
 }
 
 .admin-painel-layout .header-title-container {
@@ -48,21 +46,7 @@
     align-items: flex-end;
 }
 
-.admin-painel-layout .filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.admin-painel-layout .filter-group label {
-    color: rgba(255, 255, 255, 0.85);
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
-}
-
-/* Inputs e Selects - Visual Original */
+/* Inputs e Selects */
 .admin-painel-layout .filter-group select,
 .admin-painel-layout .filter-group input {
     width: 100%;
@@ -72,10 +56,9 @@
     background: #ffffff !important;
     color: #1e293b;
     font-size: 15px;
-    transition: all 0.3s ease;
 }
 
-/* --- BOTÕES DE AÇÃO: Lado a Lado no PC, Empilhados no Celular --- */
+/* --- BOTÕES DE AÇÃO --- */
 .admin-painel-layout .actions-group {
     display: flex;
     flex-direction: row;
@@ -94,33 +77,34 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
 }
 
 .admin-painel-layout .btn-consultar {
     background: #10b981;
     color: white;
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
 }
 
 .admin-painel-layout .btn-excel {
     background: #f59e0b;
     color: white;
-    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
 }
 
-/* --- TABELA DE DADOS: OTIMIZADA PARA ESPAÇAMENTO --- */
+/* --- TABELA DE DADOS COM SCROLL NO CELULAR --- */
 .admin-painel-layout .tabela-container {
     padding: 40px;
     background: white;
+    /* Ativa o scroll lateral no mobile */
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .admin-painel-layout table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    /* Força a tabela a distribuir as colunas proporcionalmente */
+    /* No PC espalha as colunas, no Mobile garante espaço para scroll */
+    min-width: 1000px;
     table-layout: fixed;
 }
 
@@ -131,23 +115,24 @@
     text-transform: uppercase;
     font-size: 12px;
     padding: 20px 25px;
-    /* Aumentado o respiro lateral */
     text-align: left;
     border-bottom: 2px solid #e2e8f0;
+    white-space: nowrap;
 }
 
 .admin-painel-layout td {
     padding: 22px 25px;
-    /* Mais espaço entre as informações */
     border-bottom: 1px solid #f1f5f9;
     font-size: 15px;
     color: #334155;
     vertical-align: middle;
+    /* Impede que o texto quebre linha e amasse a tabela no scroll */
+    white-space: nowrap;
 }
 
-/* Definição de Larguras para evitar colunas coladas no PC */
+/* Larguras para evitar dados colados no PC */
 .admin-painel-layout th:nth-child(1) {
-    width: 150px;
+    width: 140px;
 }
 
 /* Patrimônio */
@@ -155,14 +140,14 @@
     width: auto;
 }
 
-/* Equipamento (Flexível) */
+/* Equipamento (Cresce) */
 .admin-painel-layout th:nth-child(3) {
-    width: 250px;
+    width: 260px;
 }
 
 /* Unidade/Setor */
 .admin-painel-layout th:nth-child(4) {
-    width: 180px;
+    width: 160px;
 }
 
 /* Status */
@@ -176,11 +161,16 @@
     background-color: #f8fafc;
 }
 
-/* --- REGRAS ESPECÍFICAS PARA CELULAR --- */
+/* --- REGRAS PARA CELULAR (SCROLL LATERAL) --- */
 @media (max-width: 767px) {
-    .admin-painel-layout table {
-        table-layout: auto;
-        /* Volta ao normal no mobile */
+    .admin-painel-layout {
+        width: 100%;
+        margin: 0;
+        border-radius: 0;
+    }
+
+    .admin-painel-layout .cadastro-equip-header {
+        padding: 20px;
     }
 
     .admin-painel-layout .actions-group {
@@ -194,46 +184,31 @@
     }
 
     .admin-painel-layout .tabela-container {
-        padding: 10px;
+        padding: 15px;
+        /* Estilização da barra de scroll */
     }
 
-    .admin-painel-layout table,
-    .admin-painel-layout thead,
-    .admin-painel-layout tbody,
-    .admin-painel-layout th,
-    .admin-painel-layout td,
-    .admin-painel-layout tr {
-        display: block;
+    .admin-painel-layout .tabela-container::-webkit-scrollbar {
+        height: 6px;
     }
 
-    .admin-painel-layout thead {
-        display: none;
-    }
-
-    .admin-painel-layout tr {
-        margin-bottom: 15px;
-        border: 1px solid #e2e8f0;
+    .admin-painel-layout .tabela-container::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
         border-radius: 10px;
-        padding: 10px;
     }
 
-    .admin-painel-layout td {
-        display: flex;
-        justify-content: space-between;
-        padding: 12px 5px;
-        border-bottom: 1px solid #f1f5f9;
-        text-align: right;
-        font-size: 14px;
-        width: 100% !important;
-        /* Reseta largura do PC */
+    /* REMOVIDO: display: block para permitir o scroll de tabela real */
+    .admin-painel-layout table {
+        table-layout: auto;
+        /* Deixa o conteúdo respirar no scroll */
+        min-width: 850px;
+        /* Largura mínima para o scroll funcionar bem */
     }
 
-    .admin-painel-layout td::before {
-        content: attr(data-label);
-        font-weight: 700;
-        color: #64748b;
-        font-size: 11px;
-        text-align: left;
+    .admin-painel-layout td,
+    .admin-painel-layout th {
+        padding: 15px 15px;
+        /* Reduz padding no mobile para caber mais */
     }
 }
 
@@ -242,7 +217,6 @@
     font-family: 'JetBrains Mono', monospace;
     font-weight: 800;
     color: #2563eb;
-    font-size: 16px;
 }
 
 .admin-painel-layout .status-badge {
@@ -251,7 +225,6 @@
     font-size: 11px;
     font-weight: 800;
     text-transform: uppercase;
-    display: inline-block;
 }
 
 .admin-painel-layout .status-badge.ativo {
@@ -262,16 +235,6 @@
 .admin-painel-layout .status-badge.baixado {
     background: #fee2e2;
     color: #b91c1c;
-}
-
-.admin-painel-layout .unit-tag {
-    background: #eff6ff;
-    color: #1d4ed8;
-    padding: 5px 10px;
-    border-radius: 6px;
-    font-weight: 700;
-    font-size: 12px;
-    border: 1px solid #dbeafe;
 }
 
 .admin-painel-layout .btn-dar-baixa {

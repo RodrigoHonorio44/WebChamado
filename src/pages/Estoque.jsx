@@ -95,7 +95,7 @@ const Estoque = () => {
             <header className="estoque-header">
                 <div className="header-info">
                     <h1>🏬 Sala do Patrimônio</h1>
-                    <p className="header-subtitle">Itens aguardando distribuição ou manutenção</p>
+                    <p>Itens aguardando distribuição ou manutenção</p>
                 </div>
                 <div className="header-actions">
                     <button onClick={carregarEstoquePatrimonio} className="btn-atualizar">
@@ -121,13 +121,9 @@ const Estoque = () => {
                         </thead>
                         <tbody>
                             {itensAtivos.map(item => (
-                                <tr
-                                    key={item.id}
-                                    className="linha-estoque"
-                                    onClick={() => setItemSelecionado(item)}
-                                >
+                                <tr key={item.id} className="linha-estoque" onClick={() => setItemSelecionado(item)}>
                                     <td><strong>{item.nome}</strong></td>
-                                    <td><code>{item.patrimonio || 'S/P'}</code></td>
+                                    <td><code className="patrimonio-tag">{item.patrimonio || 'S/P'}</code></td>
                                     <td>
                                         <span className={`status-badge ${item.estado?.toLowerCase()}`}>
                                             {item.estado}
@@ -147,17 +143,20 @@ const Estoque = () => {
                     <div className="estoque-modal-content">
                         <h2>📦 Movimentar Equipamento</h2>
 
-                        <div className="info-item-modal">
-                            Item: <strong>{itemSelecionado.nome}</strong>
+                        <div className="item-details-card">
+                            <p>Equipamento: <strong>{itemSelecionado.nome}</strong></p>
+                            <p>Origem: <span>{itemSelecionado.unidade}</span></p>
                         </div>
 
                         <form onSubmit={handleSaida}>
+                            {/* CAMPO CONDICIONAL PARA S/P COM VISUAL MELHORADO */}
                             {itemSelecionado.patrimonio?.toUpperCase() === 'S/P' && (
-                                <div className="alerta-sp">
-                                    <label>Identificar este Patrimônio (S/P):</label>
+                                <div className="alerta-sp-form">
+                                    <label>Este item não tem patrimônio. Identifique-o agora:</label>
                                     <input
                                         type="text"
-                                        placeholder="Digite o novo número"
+                                        className="input-patrimonio-novo"
+                                        placeholder="N° Patrimônio"
                                         value={novoPatrimonioParaSP}
                                         onChange={(e) => setNovoPatrimonioParaSP(e.target.value)}
                                         required
@@ -193,15 +192,15 @@ const Estoque = () => {
                                 <input
                                     type="text"
                                     required
-                                    placeholder="Nome completo"
+                                    placeholder="Nome de quem recebeu"
                                     value={dadosSaida.responsavelRecebimento}
                                     onChange={(e) => setDadosSaida({ ...dadosSaida, responsavelRecebimento: e.target.value })}
                                 />
                             </div>
 
                             <div className="modal-actions-container">
-                                <button type="submit" className="btn-confirmar-transferencia">
-                                    Confirmar Transferência
+                                <button type="submit" className="btn-confirmar-transferencia" disabled={loading}>
+                                    {loading ? 'Processando...' : 'Confirmar Saída'}
                                 </button>
                                 <button type="button" className="btn-modal-cancelar" onClick={fecharModal}>
                                     Cancelar
