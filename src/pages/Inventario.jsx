@@ -4,11 +4,11 @@ import { collection, getDocs, doc, updateDoc, serverTimestamp, getDoc } from 'fi
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
-import { FiSearch, FiFileText, FiLogOut, FiShield } from 'react-icons/fi';
+import { FiSearch, FiFileText, FiLogOut, FiShield } from 'react-icons/fi'; // Ícones modernos
 import '../styles/Inventario.css';
 
 const Inventario = () => {
-    const [itensExibidos, setItensExibidos] = useState([]); // Estado que controla o que aparece na tabela
+    const [itens, setItens] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isAdmin, setIsAdmin] = useState(false);
     const [buscando, setBuscando] = useState(false);
@@ -44,7 +44,6 @@ const Inventario = () => {
         verificarPermissao();
     }, [navigate]);
 
-    // Função que aplica os filtros apenas quando clicada
     const carregarDados = async (e) => {
         if (e) e.preventDefault();
         setBuscando(true);
@@ -53,24 +52,13 @@ const Inventario = () => {
             const todosOsDados = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
             const filtrados = todosOsDados.filter(item => {
-                // 1. Filtro de Unidade
                 const matchUnidade = unidadeFiltro === 'Todas' ||
                     item.unidade?.toLowerCase() === unidadeFiltro.toLowerCase();
-
-                // 2. Filtro de Status
                 const matchStatus = statusFiltro === 'Todos' || item.status === statusFiltro;
-
-                // 3. Filtro de Patrimônio (Tratando strings, números e S/P)
-                const termo = buscaPatrimonio.trim().toLowerCase();
-                const valorPatrimonio = String(item.patrimonio || "").toLowerCase();
-
-                // Se o campo estiver vazio, ignora este filtro. Se não, busca por texto contido.
-                const matchPatrimonio = termo === "" || valorPatrimonio.includes(termo);
-
-                return matchUnidade && matchStatus && matchPatrimonio;
+                return matchUnidade && matchStatus;
             });
 
-            setItensExibidos(filtrados);
+            setItens(filtrados);
             if (filtrados.length === 0) toast.info("Nenhum item encontrado.");
         } catch (error) {
             toast.error("Erro ao carregar dados.");
@@ -78,6 +66,12 @@ const Inventario = () => {
             setBuscando(false);
         }
     };
+
+    const itensFiltradosParaExibir = itens.filter(item => {
+        const termoBusca = buscaPatrimonio.trim();
+        if (termoBusca === "") return true;
+        return String(item.patrimonio) === termoBusca;
+    });
 
     const confirmarBaixa = async (id, nome) => {
         if (window.confirm(`CONFIRMAR BAIXA: ${nome}?`)) {
@@ -87,7 +81,7 @@ const Inventario = () => {
                     dataBaixa: serverTimestamp()
                 });
                 toast.warning("Patrimônio baixado.");
-                carregarDados(); // Recarrega a lista filtrada
+                carregarDados();
             } catch (error) {
                 toast.error("Erro ao processar.");
             }
@@ -96,13 +90,13 @@ const Inventario = () => {
 
     const exportarExcelCompleto = (e) => {
         if (e) e.preventDefault();
-        if (itensExibidos.length === 0) return toast.error("Carregue os dados primeiro.");
+        if (itens.length === 0) return toast.error("Carregue os dados primeiro.");
 
         const wb = XLSX.utils.book_new();
         const unidades = ["Hospital conde", "upa de Santa rita", "upa de inoã", "samu do barroco", "samu de ponta negra"];
 
         unidades.forEach(unid => {
-            const ativosDaUnidade = itensExibidos.filter(i => i.status === 'Ativo' && i.unidade?.toLowerCase() === unid.toLowerCase());
+            const ativosDaUnidade = itens.filter(i => i.status === 'Ativo' && i.unidade?.toLowerCase() === unid.toLowerCase());
             if (ativosDaUnidade.length > 0) {
                 const dados = ativosDaUnidade.map(i => ({ Patrimonio: i.patrimonio, Equipamento: i.nome, Setor: i.setor, Status: i.status }));
                 const ws = XLSX.utils.json_to_sheet(dados);
@@ -110,7 +104,7 @@ const Inventario = () => {
             }
         });
 
-        const baixados = itensExibidos.filter(i => i.status === 'Baixado');
+        const baixados = itens.filter(i => i.status === 'Baixado');
         if (baixados.length > 0) {
             const dadosBaixados = baixados.map(i => ({ Patrimonio: i.patrimonio, Equipamento: i.nome, Unidade: i.unidade, Setor: i.setor, Status: i.status }));
             const wsBaixados = XLSX.utils.json_to_sheet(dadosBaixados);
@@ -125,6 +119,7 @@ const Inventario = () => {
     if (!isAdmin) return null;
 
     return (
+        /* ADICIONADA A CLASSE admin-painel-layout PARA ISOLAR O CSS */
         <div className="admin-painel-layout cadastro-equip-container">
             <header className="cadastro-equip-header">
                 <div className="header-title-container">
@@ -155,10 +150,10 @@ const Inventario = () => {
                     </div>
 
                     <div className="filter-group">
-                        <label>BUSCAR PATRIMÔNIO / S/P</label>
+                        <label>BUSCAR PATRIMÔNIO</label>
                         <input
                             type="text"
-                            placeholder="Ex: 123 ou S/P"
+                            placeholder="Ex: 12345"
                             value={buscaPatrimonio}
                             onChange={(e) => setBuscaPatrimonio(e.target.value)}
                         />
@@ -187,11 +182,9 @@ const Inventario = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {itensExibidos.map(item => (
+                        {itensFiltradosParaExibir.map(item => (
                             <tr key={item.id} className="row-hover">
-                                <td className="td-patrimonio">
-                                    {String(item.patrimonio).toUpperCase() === 'S/P' ? 'S/P' : `#${item.patrimonio}`}
-                                </td>
+                                <td className="td-patrimonio">#{item.patrimonio}</td>
                                 <td>{item.nome}</td>
                                 <td><span className="unit-tag">{item.unidade}</span> <br /> <small>{item.setor}</small></td>
                                 <td>

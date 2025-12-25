@@ -1,10 +1,9 @@
-/* --- ESTILOS EXCLUSIVOS DO PAINEL DE INVENTÁRIO --- */
+/* --- ESTILOS EXCLUSIVOS DO PAINEL DE INVENTÁRIO (SALA DO PATRIMÔNIO) --- */
 
 /* Container Principal - Otimizado para monitores de 27" */
 .admin-painel-layout {
     width: 96%;
     max-width: 1650px;
-    /* Leve aumento para telas ultra-wide */
     margin: 20px auto;
     padding: 0;
     background-color: #ffffff;
@@ -27,6 +26,8 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
 .admin-painel-layout h1 {
@@ -39,7 +40,7 @@
     margin: 0;
 }
 
-/* Grid de Filtros Inteligente */
+/* Grid de Filtros */
 .admin-painel-layout .filters-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -61,6 +62,7 @@
     letter-spacing: 1.2px;
 }
 
+/* Inputs e Selects - Visual Original */
 .admin-painel-layout .filter-group select,
 .admin-painel-layout .filter-group input {
     width: 100%;
@@ -73,17 +75,10 @@
     transition: all 0.3s ease;
 }
 
-/* Efeito de Foco no Campo de Busca (Destaque para o usuário) */
-.admin-painel-layout .filter-group input:focus,
-.admin-painel-layout .filter-group select:focus {
-    outline: none;
-    border-color: #10b981;
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25);
-}
-
-/* Botões de Ação */
+/* --- BOTÕES DE AÇÃO: Lado a Lado no PC, Empilhados no Celular --- */
 .admin-painel-layout .actions-group {
     display: flex;
+    flex-direction: row;
     gap: 15px;
 }
 
@@ -97,6 +92,7 @@
     cursor: pointer;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -113,23 +109,19 @@
     box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
 }
 
-.admin-painel-layout .btn-consultar:hover,
-.admin-painel-layout .btn-excel:hover {
-    filter: brightness(1.05);
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-}
-
-/* Tabela de Dados Profissional */
+/* --- TABELA DE DADOS: OTIMIZADA PARA ESPAÇAMENTO --- */
 .admin-painel-layout .tabela-container {
     padding: 40px;
     background: white;
+    overflow-x: auto;
 }
 
 .admin-painel-layout table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
+    /* Força a tabela a distribuir as colunas proporcionalmente */
+    table-layout: fixed;
 }
 
 .admin-painel-layout th {
@@ -138,26 +130,116 @@
     font-weight: 700;
     text-transform: uppercase;
     font-size: 12px;
-    padding: 20px 15px;
+    padding: 20px 25px;
+    /* Aumentado o respiro lateral */
     text-align: left;
     border-bottom: 2px solid #e2e8f0;
 }
 
 .admin-painel-layout td {
-    padding: 20px 15px;
+    padding: 22px 25px;
+    /* Mais espaço entre as informações */
     border-bottom: 1px solid #f1f5f9;
     font-size: 15px;
     color: #334155;
     vertical-align: middle;
 }
 
-.admin-painel-layout .row-hover:hover {
-    background-color: #f1f5f9;
+/* Definição de Larguras para evitar colunas coladas no PC */
+.admin-painel-layout th:nth-child(1) {
+    width: 150px;
 }
 
-/* Estilização de Status e Tags */
+/* Patrimônio */
+.admin-painel-layout th:nth-child(2) {
+    width: auto;
+}
+
+/* Equipamento (Flexível) */
+.admin-painel-layout th:nth-child(3) {
+    width: 250px;
+}
+
+/* Unidade/Setor */
+.admin-painel-layout th:nth-child(4) {
+    width: 180px;
+}
+
+/* Status */
+.admin-painel-layout th:nth-child(5) {
+    width: 150px;
+}
+
+/* Botão Baixa */
+
+.admin-painel-layout .row-hover:hover {
+    background-color: #f8fafc;
+}
+
+/* --- REGRAS ESPECÍFICAS PARA CELULAR --- */
+@media (max-width: 767px) {
+    .admin-painel-layout table {
+        table-layout: auto;
+        /* Volta ao normal no mobile */
+    }
+
+    .admin-painel-layout .actions-group {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .admin-painel-layout .btn-consultar,
+    .admin-painel-layout .btn-excel {
+        width: 100%;
+    }
+
+    .admin-painel-layout .tabela-container {
+        padding: 10px;
+    }
+
+    .admin-painel-layout table,
+    .admin-painel-layout thead,
+    .admin-painel-layout tbody,
+    .admin-painel-layout th,
+    .admin-painel-layout td,
+    .admin-painel-layout tr {
+        display: block;
+    }
+
+    .admin-painel-layout thead {
+        display: none;
+    }
+
+    .admin-painel-layout tr {
+        margin-bottom: 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 10px;
+    }
+
+    .admin-painel-layout td {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 5px;
+        border-bottom: 1px solid #f1f5f9;
+        text-align: right;
+        font-size: 14px;
+        width: 100% !important;
+        /* Reseta largura do PC */
+    }
+
+    .admin-painel-layout td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: #64748b;
+        font-size: 11px;
+        text-align: left;
+    }
+}
+
+/* Estilos de Status e Tags */
 .admin-painel-layout .td-patrimonio {
-    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-family: 'JetBrains Mono', monospace;
     font-weight: 800;
     color: #2563eb;
     font-size: 16px;
@@ -192,41 +274,12 @@
     border: 1px solid #dbeafe;
 }
 
-/* Link de Sair */
-.admin-painel-layout .back-link-admin {
-    color: white;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 20px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.15);
-    transition: 0.3s;
-}
-
-.admin-painel-layout .back-link-admin:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: translateX(-5px);
-}
-
 .admin-painel-layout .btn-dar-baixa {
     background: #ffffff;
     color: #e11d48;
     border: 1px solid #fda4af;
     padding: 8px 16px;
     border-radius: 8px;
-    cursor: pointer;
     font-weight: 700;
-    font-size: 13px;
-    transition: all 0.2s;
-}
-
-.admin-painel-layout .btn-dar-baixa:hover {
-    background: #e11d48;
-    color: white;
-    border-color: #e11d48;
-    box-shadow: 0 4px 10px rgba(225, 29, 72, 0.2);
+    cursor: pointer;
 }
