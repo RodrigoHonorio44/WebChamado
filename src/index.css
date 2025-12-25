@@ -1,41 +1,72 @@
 /* src/index.css (ou Global.css) */
 
-/* 1. RESET BÁSICO */
-* {
+/* 1. RESET BÁSICO E AJUSTE PARA TELAS GRANDES */
+html,
+body,
+#root {
+  height: 100%;
+  /* Essencial para que o 'min-height: 100vh' funcione corretamente */
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  /* Fundamental para responsividade */
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
 }
 
 /* 2. VARIÁVEIS GLOBAIS (Tema) */
 :root {
   --cor-principal: #3498db;
-  /* Azul */
   --cor-secundaria: #2ecc71;
-  /* Verde */
   --cor-texto-escuro: #333333;
   --cor-fundo: #f4f7fa;
   --sombra-padrao: 0 2px 5px rgba(0, 0, 0, 0.1);
+  --max-width-site: 1200px;
+  /* Limite de largura para não espalhar demais em 27" */
 }
 
 /* 3. ESTILOS DO CORPO E FONTES */
 body {
-  font-family: 'Arial', sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  /* Fonte mais moderna para comercialização */
   background-color: var(--cor-fundo);
   color: var(--cor-texto-escuro);
   line-height: 1.6;
 }
 
-/* 4. REGRAS PARA LINKS GERAIS */
+/* 4. ESTRUTURA STICKY FOOTER (O segredo para o monitor de 27") */
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+.App {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  /* Ocupa no mínimo a altura total da tela */
+}
+
+/* O <main> vai crescer e ocupar todo o espaço sobrando, empurrando o footer */
+main {
+  flex: 1 0 auto;
+  width: 100%;
+  max-width: var(--max-width-site);
+  margin: 0 auto;
+  /* Centraliza o conteúdo no meio de monitores largos */
+  padding: 20px;
+}
+
+/* 5. REGRAS PARA LINKS GERAIS */
 a {
   text-decoration: none;
   color: var(--cor-principal);
+  transition: all 0.2s ease;
 }
 
 a:hover {
-  text-decoration: underline;
+  filter: brightness(0.8);
 }
-
-/* Seus componentes específicos (Home.css, AbrirChamado.css) */
-/* devem ser importados dentro dos próprios arquivos JSX, como já fizemos. */

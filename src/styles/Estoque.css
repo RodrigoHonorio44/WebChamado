@@ -1,0 +1,192 @@
+/* --- ESTILOS EXCLUSIVOS DA SALA DO PATRIMÔNIO --- */
+
+.estoque-layout {
+    width: 96%;
+    max-width: 1650px;
+    margin: 20px auto;
+    background-color: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+/* Header Configurado */
+.estoque-layout .estoque-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+    padding: 35px 45px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.estoque-layout .estoque-header h1 {
+    color: #ffffff !important;
+    font-size: 28px !important;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* CORREÇÃO: Subtítulo em Branco */
+.estoque-layout .estoque-header p {
+    color: rgba(255, 255, 255, 0.9) !important;
+    margin: 5px 0 0 0;
+    font-size: 15px;
+}
+
+/* CORREÇÃO: Alinhamento dos botões superiores */
+.estoque-layout .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    /* Espaço entre os botões */
+}
+
+.estoque-layout .btn-atualizar {
+    background: #10b981;
+    color: white;
+    border: none;
+    height: 48px;
+    padding: 0 25px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.estoque-layout .back-link {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    transition: 0.3s;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Tabela */
+.estoque-layout .tabela-container {
+    padding: 40px;
+    background: white;
+}
+
+.estoque-layout table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.estoque-layout th {
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 12px;
+    padding: 20px 15px;
+    text-align: left;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.estoque-layout td {
+    padding: 20px 15px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 15px;
+    color: #334155;
+}
+
+.estoque-layout .linha-estoque:hover {
+    background-color: #f1f5f9;
+    cursor: pointer;
+}
+
+/* Modal e Formulários */
+.estoque-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.estoque-modal-content {
+    background: white;
+    padding: 40px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 550px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* CORREÇÃO: Botões do Modal Lado a Lado */
+.modal-actions-container {
+    display: flex;
+    gap: 12px;
+    margin-top: 25px;
+}
+
+.btn-registrar-patrimonio {
+    flex: 2;
+    /* Botão de ação maior */
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-cancelar-modal {
+    flex: 1;
+    /* Botão cancelar menor */
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    padding: 15px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.estoque-form-group {
+    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.estoque-form-group label {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.estoque-form-group input,
+.estoque-form-group select {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.alerta-sp {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    color: #92400e;
+}

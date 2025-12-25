@@ -3,13 +3,12 @@ import { db } from '../api/firebase';
 import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import '../styles/CadastroEquipamento.css';
+import '../styles/Estoque.css';
 
 const Estoque = () => {
     const [itensAtivos, setItensAtivos] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Estados para o Modal de Saída
     const [itemSelecionado, setItemSelecionado] = useState(null);
     const [novoPatrimonioParaSP, setNovoPatrimonioParaSP] = useState('');
     const [dadosSaida, setDadosSaida] = useState({
@@ -75,8 +74,7 @@ const Estoque = () => {
             });
 
             toast.success("Transferência realizada com sucesso!");
-            setItemSelecionado(null);
-            setNovoPatrimonioParaSP('');
+            fecharModal();
             carregarEstoquePatrimonio();
         } catch (error) {
             console.error(error);
@@ -86,24 +84,35 @@ const Estoque = () => {
         }
     };
 
+    const fecharModal = () => {
+        setItemSelecionado(null);
+        setNovoPatrimonioParaSP('');
+        setDadosSaida({ ...dadosSaida, novaUnidade: '', novoSetor: '', responsavelRecebimento: '' });
+    };
+
     return (
-        <div className="cadastro-equip-container">
-            <header className="cadastro-equip-header">
-                <h1>🏬 Itens na Sala do Patrimônio</h1>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    <button onClick={carregarEstoquePatrimonio} className="btn-atualizar">🔄 Atualizar</button>
-                    <Link to="/" className="back-link">Voltar</Link>
+        <div className="estoque-layout">
+            <header className="estoque-header">
+                <div className="header-info">
+                    <h1>🏬 Sala do Patrimônio</h1>
+                    <p className="header-subtitle">Itens aguardando distribuição ou manutenção</p>
+                </div>
+                <div className="header-actions">
+                    <button onClick={carregarEstoquePatrimonio} className="btn-atualizar">
+                        🔄 Atualizar Grade
+                    </button>
+                    <Link to="/" className="back-link">Voltar ao Início</Link>
                 </div>
             </header>
 
-            <div className="tabela-container" style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+            <div className="tabela-container">
                 {loading && !itemSelecionado ? (
-                    <p>Carregando...</p>
+                    <div className="loading-state">Carregando estoque...</div>
                 ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <table>
                         <thead>
-                            <tr style={{ borderBottom: '2px solid #eee', color: '#64748b' }}>
-                                <th style={{ padding: '12px' }}>Nome</th>
+                            <tr>
+                                <th>Equipamento</th>
                                 <th>Patrimônio</th>
                                 <th>Estado</th>
                                 <th>Qtd</th>
@@ -112,15 +121,20 @@ const Estoque = () => {
                         </thead>
                         <tbody>
                             {itensAtivos.map(item => (
-                                <tr key={item.id}
+                                <tr
+                                    key={item.id}
+                                    className="linha-estoque"
                                     onClick={() => setItemSelecionado(item)}
-                                    style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }}
-                                    className="linha-estoque">
-                                    <td style={{ padding: '12px' }}><strong>{item.nome}</strong></td>
-                                    <td><code>{item.patrimonio || 's/p'}</code></td>
-                                    <td>{item.estado}</td>
+                                >
+                                    <td><strong>{item.nome}</strong></td>
+                                    <td><code>{item.patrimonio || 'S/P'}</code></td>
+                                    <td>
+                                        <span className={`status-badge ${item.estado?.toLowerCase()}`}>
+                                            {item.estado}
+                                        </span>
+                                    </td>
                                     <td>{item.quantidade}</td>
-                                    <td style={{ fontSize: '12px' }}>{item.observacoes}</td>
+                                    <td className="td-obs">{item.observacoes}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -129,85 +143,67 @@ const Estoque = () => {
             </div>
 
             {itemSelecionado && (
-                <div className="modal-overlay" style={{
-                    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-                    backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
-                }}>
-                    <div className="modal-content" style={{ background: 'white', padding: '30px', borderRadius: '12px', width: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
-                        <h2 style={{ marginBottom: '10px' }}>📦 Movimentar Item</h2>
-                        <p style={{ marginBottom: '20px', color: '#475569' }}>Item: <strong>{itemSelecionado.nome}</strong></p>
+                <div className="estoque-modal-overlay">
+                    <div className="estoque-modal-content">
+                        <h2>📦 Movimentar Equipamento</h2>
+
+                        <div className="info-item-modal">
+                            Item: <strong>{itemSelecionado.nome}</strong>
+                        </div>
 
                         <form onSubmit={handleSaida}>
                             {itemSelecionado.patrimonio?.toUpperCase() === 'S/P' && (
-                                <div className="form-group" style={{ background: '#fffbeb', padding: '15px', borderRadius: '8px', border: '1px solid #fcd34d', marginBottom: '15px' }}>
-                                    <label style={{ fontWeight: 'bold', color: '#92400e' }}>Identificar este S/P agora?</label>
+                                <div className="alerta-sp">
+                                    <label>Identificar este Patrimônio (S/P):</label>
                                     <input
                                         type="text"
                                         placeholder="Digite o novo número"
                                         value={novoPatrimonioParaSP}
                                         onChange={(e) => setNovoPatrimonioParaSP(e.target.value)}
-                                        style={{ marginTop: '8px' }}
+                                        required
                                     />
                                 </div>
                             )}
 
-                            <div className="form-group">
-                                <label>Unidade de Destino:</label>
-                                <select required onChange={(e) => setDadosSaida({ ...dadosSaida, novaUnidade: e.target.value })}>
-                                    <option value="">Selecione...</option>
+                            <div className="estoque-form-group">
+                                <label>Unidade de Destino</label>
+                                <select
+                                    required
+                                    value={dadosSaida.novaUnidade}
+                                    onChange={(e) => setDadosSaida({ ...dadosSaida, novaUnidade: e.target.value })}
+                                >
+                                    <option value="">Selecione a unidade...</option>
                                     {unidades.map(u => <option key={u} value={u}>{u}</option>)}
                                 </select>
                             </div>
 
-                            <div className="form-group">
-                                <label>Novo Setor:</label>
+                            <div className="estoque-form-group">
+                                <label>Setor de Destino</label>
                                 <input
                                     type="text"
                                     required
-                                    placeholder="Ex: Recepção"
+                                    placeholder="Ex: Sala de Raio-X"
+                                    value={dadosSaida.novoSetor}
                                     onChange={(e) => setDadosSaida({ ...dadosSaida, novoSetor: e.target.value })}
                                 />
                             </div>
 
-                            <div className="form-group">
-                                <label>Responsável pelo Recebimento:</label>
+                            <div className="estoque-form-group">
+                                <label>Responsável pelo Recebimento</label>
                                 <input
                                     type="text"
                                     required
-                                    placeholder="Nome de quem recebeu"
+                                    placeholder="Nome completo"
+                                    value={dadosSaida.responsavelRecebimento}
                                     onChange={(e) => setDadosSaida({ ...dadosSaida, responsavelRecebimento: e.target.value })}
                                 />
                             </div>
 
-                            <div style={{ display: 'flex', gap: '12px', marginTop: '25px' }}>
-                                <button type="submit" className="btn-registrar-patrimonio" style={{ flex: 2, padding: '12px', fontWeight: 'bold' }}>
-                                    Confirmar Saída
+                            <div className="modal-actions-container">
+                                <button type="submit" className="btn-confirmar-transferencia">
+                                    Confirmar Transferência
                                 </button>
-
-                                {/* BOTÃO CANCELAR MELHORADO */}
-                                <button
-                                    type="button"
-                                    onClick={() => setItemSelecionado(null)}
-                                    style={{
-                                        flex: 1,
-                                        padding: '12px',
-                                        backgroundColor: '#f1f5f9', // Fundo cinza bem claro
-                                        color: '#475569',           // Texto cinza escuro
-                                        border: '1px solid #cbd5e1', // Borda sutil
-                                        borderRadius: '8px',
-                                        cursor: 'pointer',
-                                        fontWeight: '600',
-                                        transition: 'all 0.2s ease'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.target.style.backgroundColor = '#e2e8f0';
-                                        e.target.style.color = '#1e293b';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.target.style.backgroundColor = '#f1f5f9';
-                                        e.target.style.color = '#475569';
-                                    }}
-                                >
+                                <button type="button" className="btn-modal-cancelar" onClick={fecharModal}>
                                     Cancelar
                                 </button>
                             </div>

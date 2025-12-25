@@ -1,0 +1,232 @@
+/* --- ESTILOS EXCLUSIVOS DO PAINEL DE INVENTÁRIO --- */
+
+/* Container Principal - Otimizado para monitores de 27" */
+.admin-painel-layout {
+    width: 96%;
+    max-width: 1650px;
+    /* Leve aumento para telas ultra-wide */
+    margin: 20px auto;
+    padding: 0;
+    background-color: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+/* Header Estilo Dashboard Profissional */
+.admin-painel-layout .cadastro-equip-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+    padding: 35px 45px;
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.admin-painel-layout .header-title-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.admin-painel-layout h1 {
+    color: #ffffff !important;
+    font-size: 28px !important;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 0;
+}
+
+/* Grid de Filtros Inteligente */
+.admin-painel-layout .filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 25px;
+    align-items: flex-end;
+}
+
+.admin-painel-layout .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.admin-painel-layout .filter-group label {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+}
+
+.admin-painel-layout .filter-group select,
+.admin-painel-layout .filter-group input {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: #ffffff !important;
+    color: #1e293b;
+    font-size: 15px;
+    transition: all 0.3s ease;
+}
+
+/* Efeito de Foco no Campo de Busca (Destaque para o usuário) */
+.admin-painel-layout .filter-group input:focus,
+.admin-painel-layout .filter-group select:focus {
+    outline: none;
+    border-color: #10b981;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25);
+}
+
+/* Botões de Ação */
+.admin-painel-layout .actions-group {
+    display: flex;
+    gap: 15px;
+}
+
+.admin-painel-layout .btn-consultar,
+.admin-painel-layout .btn-excel {
+    height: 48px;
+    padding: 0 25px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-painel-layout .btn-consultar {
+    background: #10b981;
+    color: white;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
+
+.admin-painel-layout .btn-excel {
+    background: #f59e0b;
+    color: white;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+}
+
+.admin-painel-layout .btn-consultar:hover,
+.admin-painel-layout .btn-excel:hover {
+    filter: brightness(1.05);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Tabela de Dados Profissional */
+.admin-painel-layout .tabela-container {
+    padding: 40px;
+    background: white;
+}
+
+.admin-painel-layout table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.admin-painel-layout th {
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 12px;
+    padding: 20px 15px;
+    text-align: left;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.admin-painel-layout td {
+    padding: 20px 15px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 15px;
+    color: #334155;
+    vertical-align: middle;
+}
+
+.admin-painel-layout .row-hover:hover {
+    background-color: #f1f5f9;
+}
+
+/* Estilização de Status e Tags */
+.admin-painel-layout .td-patrimonio {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-weight: 800;
+    color: #2563eb;
+    font-size: 16px;
+}
+
+.admin-painel-layout .status-badge {
+    padding: 8px 14px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    display: inline-block;
+}
+
+.admin-painel-layout .status-badge.ativo {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.admin-painel-layout .status-badge.baixado {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.admin-painel-layout .unit-tag {
+    background: #eff6ff;
+    color: #1d4ed8;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 12px;
+    border: 1px solid #dbeafe;
+}
+
+/* Link de Sair */
+.admin-painel-layout .back-link-admin {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    transition: 0.3s;
+}
+
+.admin-painel-layout .back-link-admin:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateX(-5px);
+}
+
+.admin-painel-layout .btn-dar-baixa {
+    background: #ffffff;
+    color: #e11d48;
+    border: 1px solid #fda4af;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.admin-painel-layout .btn-dar-baixa:hover {
+    background: #e11d48;
+    color: white;
+    border-color: #e11d48;
+    box-shadow: 0 4px 10px rgba(225, 29, 72, 0.2);
+}
