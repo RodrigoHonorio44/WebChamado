@@ -4,7 +4,7 @@ import { collection, getDocs, doc, updateDoc, serverTimestamp, getDoc } from 'fi
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
-import { FiSearch, FiFileText, FiLogOut, FiShield } from 'react-icons/fi'; // Ícones modernos
+import { FiSearch, FiFileText, FiLogOut, FiShield, FiAlertTriangle, FiCheck, FiX } from 'react-icons/fi';
 import '../styles/Inventario.css';
 
 const Inventario = () => {
@@ -16,6 +16,9 @@ const Inventario = () => {
     const [unidadeFiltro, setUnidadeFiltro] = useState('Todas');
     const [statusFiltro, setStatusFiltro] = useState('Ativo');
     const [buscaPatrimonio, setBuscaPatrimonio] = useState('');
+
+    // --- ESTADO PARA O MODAL ---
+    const [modalBaixa, setModalBaixa] = useState({ aberto: false, id: null, nome: '' });
 
     const navigate = useNavigate();
 
@@ -73,18 +76,26 @@ const Inventario = () => {
         return String(item.patrimonio) === termoBusca;
     });
 
-    const confirmarBaixa = async (id, nome) => {
-        if (window.confirm(`CONFIRMAR BAIXA: ${nome}?`)) {
-            try {
-                await updateDoc(doc(db, "ativos", id), {
-                    status: "Baixado",
-                    dataBaixa: serverTimestamp()
-                });
-                toast.warning("Patrimônio baixado.");
-                carregarDados();
-            } catch (error) {
-                toast.error("Erro ao processar.");
-            }
+    // --- FUNÇÕES DO MODAL ---
+    const abrirModalConfirmacao = (id, nome) => {
+        setModalBaixa({ aberto: true, id, nome });
+    };
+
+    const fecharModal = () => {
+        setModalBaixa({ aberto: false, id: null, nome: '' });
+    };
+
+    const confirmarBaixa = async () => {
+        try {
+            await updateDoc(doc(db, "ativos", modalBaixa.id), {
+                status: "Baixado",
+                dataBaixa: serverTimestamp()
+            });
+            toast.warning(`Patrimônio ${modalBaixa.nome} baixado.`);
+            fecharModal();
+            carregarDados();
+        } catch (error) {
+            toast.error("Erro ao processar baixa.");
         }
     };
 
@@ -119,7 +130,6 @@ const Inventario = () => {
     if (!isAdmin) return null;
 
     return (
-        /* ADICIONADA A CLASSE admin-painel-layout PARA ISOLAR O CSS */
         <div className="admin-painel-layout cadastro-equip-container">
             <header className="cadastro-equip-header">
                 <div className="header-title-container">
@@ -197,7 +207,7 @@ const Inventario = () => {
                                         <button
                                             type="button"
                                             className="btn-dar-baixa"
-                                            onClick={() => confirmarBaixa(item.id, item.nome)}
+                                            onClick={() => abrirModalConfirmacao(item.id, item.nome)}
                                         >
                                             Dar Baixa
                                         </button>
@@ -208,6 +218,27 @@ const Inventario = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* --- MODAL DE BAIXA --- */}
+            {modalBaixa.aberto && (
+                <div className="modal-baixa-overlay">
+                    <div className="modal-baixa-card">
+                        <div className="modal-baixa-icon">
+                            <FiAlertTriangle />
+                        </div>
+                        <h3>Confirmar Baixa?</h3>
+                        <p>Você está prestes a remover o item <strong>{modalBaixa.nome}</strong> do inventário ativo.</p>
+                        <div className="modal-baixa-actions">
+                            <button className="btn-modal-cancelar" onClick={fecharModal}>
+                                <FiX /> Cancelar
+                            </button>
+                            <button className="btn-modal-confirmar" onClick={confirmarBaixa}>
+                                <FiCheck /> Confirmar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

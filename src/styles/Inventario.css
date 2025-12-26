@@ -38,12 +38,31 @@
     margin: 0;
 }
 
+/* Link de Sair do Painel */
+.admin-painel-layout .back-link-admin {
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
 /* Grid de Filtros */
 .admin-painel-layout .filters-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 25px;
     align-items: flex-end;
+}
+
+.admin-painel-layout .filter-group label {
+    display: block;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    text-transform: uppercase;
 }
 
 /* Inputs e Selects */
@@ -90,11 +109,10 @@
     color: white;
 }
 
-/* --- TABELA DE DADOS COM SCROLL NO CELULAR --- */
+/* --- TABELA DE DADOS --- */
 .admin-painel-layout .tabela-container {
     padding: 40px;
     background: white;
-    /* Ativa o scroll lateral no mobile */
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
@@ -103,7 +121,6 @@
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    /* No PC espalha as colunas, no Mobile garante espaço para scroll */
     min-width: 1000px;
     table-layout: fixed;
 }
@@ -117,7 +134,6 @@
     padding: 20px 25px;
     text-align: left;
     border-bottom: 2px solid #e2e8f0;
-    white-space: nowrap;
 }
 
 .admin-painel-layout td {
@@ -126,97 +142,22 @@
     font-size: 15px;
     color: #334155;
     vertical-align: middle;
-    /* Impede que o texto quebre linha e amasse a tabela no scroll */
-    white-space: nowrap;
 }
-
-/* Larguras para evitar dados colados no PC */
-.admin-painel-layout th:nth-child(1) {
-    width: 140px;
-}
-
-/* Patrimônio */
-.admin-painel-layout th:nth-child(2) {
-    width: auto;
-}
-
-/* Equipamento (Cresce) */
-.admin-painel-layout th:nth-child(3) {
-    width: 260px;
-}
-
-/* Unidade/Setor */
-.admin-painel-layout th:nth-child(4) {
-    width: 160px;
-}
-
-/* Status */
-.admin-painel-layout th:nth-child(5) {
-    width: 150px;
-}
-
-/* Botão Baixa */
 
 .admin-painel-layout .row-hover:hover {
     background-color: #f8fafc;
 }
 
-/* --- REGRAS PARA CELULAR (SCROLL LATERAL) --- */
-@media (max-width: 767px) {
-    .admin-painel-layout {
-        width: 100%;
-        margin: 0;
-        border-radius: 0;
-    }
-
-    .admin-painel-layout .cadastro-equip-header {
-        padding: 20px;
-    }
-
-    .admin-painel-layout .actions-group {
-        flex-direction: column;
-        width: 100%;
-    }
-
-    .admin-painel-layout .btn-consultar,
-    .admin-painel-layout .btn-excel {
-        width: 100%;
-    }
-
-    .admin-painel-layout .tabela-container {
-        padding: 15px;
-        /* Estilização da barra de scroll */
-    }
-
-    .admin-painel-layout .tabela-container::-webkit-scrollbar {
-        height: 6px;
-    }
-
-    .admin-painel-layout .tabela-container::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 10px;
-    }
-
-    /* REMOVIDO: display: block para permitir o scroll de tabela real */
-    .admin-painel-layout table {
-        table-layout: auto;
-        /* Deixa o conteúdo respirar no scroll */
-        min-width: 850px;
-        /* Largura mínima para o scroll funcionar bem */
-    }
-
-    .admin-painel-layout td,
-    .admin-painel-layout th {
-        padding: 15px 15px;
-        /* Reduz padding no mobile para caber mais */
-    }
-}
-
-/* Estilos de Status e Tags */
+/* --- STATUS E TAGS --- */
 .admin-painel-layout .td-patrimonio {
     font-family: 'JetBrains Mono', monospace;
     font-weight: 800;
     color: #2563eb;
+}
+
+.admin-painel-layout .unit-tag {
+    font-weight: 600;
+    color: #1e3a8a;
 }
 
 .admin-painel-layout .status-badge {
@@ -245,4 +186,141 @@
     border-radius: 8px;
     font-weight: 700;
     cursor: pointer;
+    transition: all 0.2s;
+}
+
+.admin-painel-layout .btn-dar-baixa:hover {
+    background: #e11d48;
+    color: white;
+}
+
+/* ============================================================
+   ESTILOS DO NOVO MODAL (MELHOR QUE POPUP DO WINDOWS)
+   ============================================================ */
+
+.modal-baixa-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.7);
+    /* Fundo escuro */
+    backdrop-filter: blur(6px);
+    /* Efeito de desfoque */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.modal-baixa-card {
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 450px;
+    text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-baixa-icon {
+    font-size: 3.5rem;
+    color: #f59e0b;
+    /* Amarelo de atenção */
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.modal-baixa-card h3 {
+    color: #1e293b;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.modal-baixa-card p {
+    color: #64748b;
+    font-size: 16px;
+    line-height: 1.5;
+    margin-bottom: 30px;
+}
+
+.modal-baixa-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.btn-modal-cancelar,
+.btn-modal-confirmar {
+    flex: 1;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-modal-cancelar {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.btn-modal-confirmar {
+    background: #e11d48;
+    /* Vermelho padrão da sua baixa */
+    color: white;
+}
+
+.btn-modal-confirmar:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+}
+
+.btn-modal-cancelar:hover {
+    background: #e2e8f0;
+}
+
+@keyframes modalPop {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* --- AJUSTES MOBILE --- */
+@media (max-width: 767px) {
+    .admin-painel-layout {
+        width: 100%;
+        margin: 0;
+        border-radius: 0;
+    }
+
+    .admin-painel-layout .cadastro-equip-header {
+        padding: 25px;
+    }
+
+    .admin-painel-layout .actions-group {
+        flex-direction: column;
+    }
+
+    .admin-painel-layout .tabela-container {
+        padding: 15px;
+    }
+
+    .admin-painel-layout table {
+        min-width: 850px;
+    }
 }
