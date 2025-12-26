@@ -114,7 +114,7 @@ const AbrirChamado = () => {
                 <button onClick={() => navigate('/')} className="btn-back-home">
                     <AiOutlineArrowLeft /> Voltar ao Início
                 </button>
-                <div className="nav-logo">SISTEMA TI</div>
+                <div className="nav-logo">Rodhon System</div>
             </div>
 
             <div className="chamado-container-card">

@@ -1,16 +1,19 @@
-# React + Vite
+# Gestão de Patrimônio & Helpdesk | Rodhon System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![License](https://img.shields.io/badge/Status-Projeto%20Real-green)
+![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react)
 
-Currently, two official plugins are available:
+## 📋 Cenário e Motivação
+Identifiquei, durante minha atuação no Hospital Municipal Conde Modesto Leal, a ausência de um sistema centralizado para gerir o patrimônio e os chamados de manutenção. Este software foi desenvolvido pela **Rodhon System** para digitalizar esse processo, reduzindo o tempo de resposta e organizando o inventário municipal.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🛠 Funcionalidades
+- **Inventário Digital:** Cadastro e consulta de bens patrimoniais.
+- **Sistema de Tickets:** Abertura e acompanhamento de chamados de manutenção.
+- **Níveis de Acesso:** Separação entre operadores e administradores.
 
-## React Compiler
+## 🚀 Impacto
+Substituição de planilhas e processos verbais por uma base de dados estruturada e auditável.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+**Desenvolvedor:** Rodrigo da Silva Honório 
+**LinkedIn:** [rodrigo-s-honório](https://www.linkedin.com/in/rodrigo-s-hon%C3%B3rio/)
