@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../api/firebase';
 import { collection, getDocs, doc, updateDoc, query, orderBy, setDoc, deleteDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { FiArrowLeft, FiShield, FiUser, FiUserPlus, FiCheck, FiX, FiTrash2, FiAlertTriangle } from 'react-icons/fi';
+import { FiArrowLeft, FiShield, FiUser, FiUserPlus, FiCheck, FiX, FiTrash2, FiAlertTriangle, FiMail } from 'react-icons/fi';
 import '../styles/Admin.css';
 
 const AdminUsuarios = () => {
@@ -52,10 +52,19 @@ const AdminUsuarios = () => {
         buscarUsuarios();
     }, []);
 
-    // ✅ FUNÇÃO QUE EXECUTA A EXCLUSÃO REAL
+    // ✅ FUNÇÃO DE RESET (COM TEXTO ADICIONADO NO BOTÃO ABAIXO)
+    const handleResetSenha = async (email) => {
+        try {
+            await sendPasswordResetEmail(auth, email);
+            toast.success(`E-mail de reset enviado para ${email}`);
+        } catch (error) {
+            toast.error("Erro ao enviar reset.");
+        }
+    };
+
+    // ✅ FUNÇÃO DE EXCLUSÃO (CORRIGIDA)
     const confirmarExclusao = async () => {
         if (!usuarioParaExcluir) return;
-
         try {
             await deleteDoc(doc(db, "usuarios", usuarioParaExcluir.id));
             toast.success(`Acesso de ${usuarioParaExcluir.name} removido!`);
@@ -67,13 +76,11 @@ const AdminUsuarios = () => {
         }
     };
 
-    // Abre o modal de exclusão
     const handleAbrirExclusao = (user) => {
         setUsuarioParaExcluir(user);
         setMostrarModalExcluir(true);
     };
 
-    // ... (suas outras funções de criar analista e alterar cargo permanecem iguais)
     const handleCriarAnalista = async (e) => {
         e.preventDefault();
         if (!podeCadastrar) return;
@@ -101,8 +108,8 @@ const AdminUsuarios = () => {
     const limparCampos = () => { setNovoNome(''); setNovoEmail(''); setNovaSenha(''); };
 
     const usuariosFiltrados = usuarios.filter(u =>
-        u.email?.toLowerCase().includes(busca.toLowerCase()) ||
-        u.name?.toLowerCase().includes(busca.toLowerCase())
+        (u.email?.toLowerCase().includes(busca.toLowerCase())) ||
+        (u.name?.toLowerCase().includes(busca.toLowerCase()))
     );
 
     return (
@@ -117,7 +124,7 @@ const AdminUsuarios = () => {
                 </button>
             </header>
 
-            {/* ✅ MODAL DE CADASTRO */}
+            {/* MODAL DE CADASTRO */}
             {mostrarModalCadastro && (
                 <div className="modal-overlay">
                     <div className="modal-content">
@@ -151,7 +158,7 @@ const AdminUsuarios = () => {
                 </div>
             )}
 
-            {/* ✅ NOVO MODAL DE EXCLUSÃO (SUBSTITUI O POP-UP DO NAVEGADOR) */}
+            {/* MODAL DE EXCLUSÃO */}
             {mostrarModalExcluir && (
                 <div className="modal-overlay">
                     <div className="modal-content" style={{ textAlign: 'center', borderTop: '6px solid #dc2626' }}>
@@ -159,18 +166,11 @@ const AdminUsuarios = () => {
                         <h2 style={{ marginBottom: '10px' }}>Confirmar Exclusão</h2>
                         <p style={{ color: '#64748b', marginBottom: '25px' }}>
                             Deseja realmente remover o acesso de <br />
-                            <strong>{usuarioParaExcluir?.name}</strong>? <br />
-                            <small>(Esta ação não pode ser desfeita no banco de dados)</small>
+                            <strong>{usuarioParaExcluir?.name}</strong>?
                         </p>
-
                         <div className="modal-actions-row">
                             <button type="button" onClick={() => setMostrarModalExcluir(false)} className="btn-cancelar">Cancelar</button>
-                            <button
-                                type="button"
-                                onClick={confirmarExclusao}
-                                className="btn-salvar-modern"
-                                style={{ background: '#dc2626' }}
-                            >
+                            <button type="button" onClick={confirmarExclusao} className="btn-salvar-modern" style={{ background: '#dc2626' }}>
                                 Sim, Excluir
                             </button>
                         </div>
@@ -178,7 +178,6 @@ const AdminUsuarios = () => {
                 </div>
             )}
 
-            {/* BARRA DE BUSCA E TABELA */}
             <div className="search-bar">
                 <input type="text" placeholder="Buscar usuário..." value={busca} onChange={(e) => setBusca(e.target.value)} className="form-input-modern" />
             </div>
@@ -202,9 +201,17 @@ const AdminUsuarios = () => {
                                 <td style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                                     {user.role !== 'adm' && (
                                         <>
+                                            {/* ✅ BOTÃO RESET COM NOME */}
+                                            <button onClick={() => handleResetSenha(user.email)} className="btn-action-reset" title="Resetar Senha">
+                                                <FiMail /> Reset
+                                            </button>
+
+                                            {/* BOTÃO CARGO */}
                                             <button onClick={() => alterarCargo(user.id, user.role === 'analista' ? 'user' : 'analista')} className={user.role === 'analista' ? 'btn-action-remove' : 'btn-action-add'}>
                                                 {user.role === 'analista' ? 'Remover Analista' : 'Tornar Analista'}
                                             </button>
+
+                                            {/* BOTÃO EXCLUIR */}
                                             <button onClick={() => handleAbrirExclusao(user)} className="btn-action-delete">
                                                 <FiTrash2 />
                                             </button>

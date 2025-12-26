@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import ImagemPatrimonio from '../assets/patri.png';
 import '../styles/Home.css';
 import { useAuth } from '../contexts/AuthContext';
+// ✅ IMPORTAÇÃO DO NOVO COMPONENTE DE SEGURANÇA
+import AlertaSeguranca from '../components/AlertaSeguranca';
 
 const Home = () => {
     const { user, userData, loading, logout } = useAuth();
@@ -11,6 +13,9 @@ const Home = () => {
 
     return (
         <div className="home-container">
+            {/* ✅ O AVISO FICA AQUI: ELE APARECERÁ NO TOPO APENAS SE NECESSÁRIO */}
+            <AlertaSeguranca userData={userData} />
+
             {/* Header sempre visível pois a Home agora é só para logados */}
             <header className="user-header">
                 <div className="user-info">
@@ -90,7 +95,6 @@ const Home = () => {
                     </div>
                 </div>
 
-                {/* A imagem lateral continua aqui, exatamente como antes */}
                 <div className="hero-image">
                     <img src={ImagemPatrimonio} alt="Setor de Patrimônio" />
                 </div>

@@ -58,6 +58,26 @@
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
+/* --- LAYOUT EM GRADE (Para a página de cadastro/reset) --- */
+.admin-grid-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.admin-card-form {
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.reset-section {
+    border-top: 4px solid #3b82f6;
+}
+
 /* --- BUSCA E FORMULÁRIOS --- */
 .search-bar {
     margin-bottom: 25px;
@@ -98,6 +118,7 @@
     font-size: 0.85rem;
     font-weight: 600;
     color: #475569;
+    display: block;
 }
 
 /* --- MODAL --- */
@@ -154,10 +175,6 @@
 .password-checker-modern li.met {
     color: #16a34a;
     font-weight: 600;
-}
-
-.password-checker-modern svg {
-    font-size: 1rem;
 }
 
 /* --- BOTÕES DE AÇÃO --- */
@@ -250,11 +267,11 @@
     color: #475569;
 }
 
-/* --- BOTÕES DE AÇÃO NA LINHA --- */
-/* Estilos unificados para os botões de ação na tabela */
+/* --- BOTÕES DE AÇÃO NA LINHA (Tabela) --- */
 .btn-action-add,
 .btn-action-remove,
-.btn-action-delete {
+.btn-action-delete,
+.btn-action-reset {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -268,7 +285,18 @@
     border: 1px solid transparent;
 }
 
-/* Tornar Analista */
+/* Reset de Senha (AZUL CLARO) */
+.btn-action-reset {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+}
+
+.btn-action-reset:hover {
+    background: #1d4ed8;
+    color: white;
+}
+
 .btn-action-add {
     background: #f0fdf4;
     color: #16a34a;
@@ -280,7 +308,6 @@
     color: white;
 }
 
-/* Remover Analista */
 .btn-action-remove {
     background: #fff7ed;
     color: #c2410c;
@@ -292,13 +319,11 @@
     color: white;
 }
 
-/* Excluir (Lixeira) */
 .btn-action-delete {
     background: #fee2e2;
     color: #dc2626;
     border-color: #fecaca;
     padding: 8px;
-    /* Mais quadrado para ícone */
 }
 
 .btn-action-delete:hover {
@@ -308,6 +333,12 @@
 }
 
 /* --- RESPONSIVIDADE --- */
+@media (max-width: 850px) {
+    .admin-grid-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 768px) {
     .page-header {
         flex-direction: column;

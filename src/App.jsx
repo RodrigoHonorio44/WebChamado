@@ -27,6 +27,7 @@ import Inventario from './pages/Inventario';
 import Estoque from './pages/Estoque';
 import Suporte from './pages/Suporte';
 import Termos from './pages/Termos';
+import TrocarSenha from './pages/TrocarSenha'; // ✅ NOVA IMPORTAÇÃO
 
 const AppContent = () => {
   const { user, loading } = useAuth();
@@ -89,6 +90,13 @@ const AppContent = () => {
           <Route path="/home" element={
             <ProtectedRoute>
               <Home />
+            </ProtectedRoute>
+          } />
+
+          {/* 🟢 SEGURANÇA (NOVA ROTA) */}
+          <Route path="/trocar-senha" element={
+            <ProtectedRoute>
+              <TrocarSenha />
             </ProtectedRoute>
           } />
 

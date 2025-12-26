@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { db, auth } from '../api/firebase';
-import { collection, query, getDocs, doc, updateDoc, serverTimestamp, orderBy, writeBatch, deleteDoc } from 'firebase/firestore';
+import { collection, query, getDocs, doc, updateDoc, serverTimestamp, orderBy, writeBatch } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-toastify';
-import { FiArrowLeft, FiCheck, FiX, FiClipboard, FiDownload } from 'react-icons/fi';
+import { FiX, FiClipboard, FiDownload, FiEye } from 'react-icons/fi'; // Adicionei FiEye
 import '../styles/MeusChamados.css';
 
 const PainelAnalista = () => {
@@ -14,8 +14,13 @@ const PainelAnalista = () => {
     const [loading, setLoading] = useState(true);
     const [aguardandoConfirmacao, setAguardandoConfirmacao] = useState(false);
 
-    const [mostrarModal, setMostrarModal] = useState(false);
+    // Modais
+    const [mostrarModal, setMostrarModal] = useState(false); // Modal de fechar
+    const [mostrarDetalhes, setMostrarDetalhes] = useState(false); // Modal de ver detalhes
+
     const [chamadoParaFinalizar, setChamadoParaFinalizar] = useState(null);
+    const [chamadoSelecionado, setChamadoSelecionado] = useState(null);
+
     const [parecerTecnico, setParecerTecnico] = useState("");
     const [patrimonio, setPatrimonio] = useState("");
 
@@ -40,7 +45,6 @@ const PainelAnalista = () => {
         buscarTodosChamados();
     }, []);
 
-    // ✅ LÓGICA DE EXPORTAR E LIMPAR (IGUAL AO SEU ANTIGO)
     const handleExportarELimpar = async () => {
         try {
             if (chamados.length === 0) {
@@ -48,7 +52,6 @@ const PainelAnalista = () => {
                 return;
             }
 
-            // 1. Preparar dados para o Excel
             const dadosExcel = chamados.map(c => ({
                 OS: c.numeroOs,
                 Data: c.criadoEm?.toDate().toLocaleString('pt-BR'),
@@ -67,7 +70,6 @@ const PainelAnalista = () => {
             XLSX.utils.book_append_sheet(wb, ws, "Chamados");
             XLSX.writeFile(wb, `Relatorio_Chamados_${new Date().toLocaleDateString()}.xlsx`);
 
-            // 2. Limpar chamados do Firebase usando Batch
             const batch = writeBatch(db);
             chamados.forEach((c) => {
                 const docRef = doc(db, "chamados", c.id);
@@ -75,12 +77,10 @@ const PainelAnalista = () => {
             });
 
             await batch.commit();
-
-            toast.success("Dados exportados e base limpa com sucesso!");
+            toast.success("Dados exportados e base limpa!");
             setChamados([]);
             setAguardandoConfirmacao(false);
         } catch (error) {
-            console.error(error);
             toast.error("Erro ao processar limpeza.");
         }
     };
@@ -88,6 +88,11 @@ const PainelAnalista = () => {
     const abrirModalFinalizar = (chamado) => {
         setChamadoParaFinalizar(chamado);
         setMostrarModal(true);
+    };
+
+    const verDetalhesChamado = (chamado) => {
+        setChamadoSelecionado(chamado);
+        setMostrarDetalhes(true);
     };
 
     const handleFinalizarChamado = async (e) => {
@@ -127,7 +132,6 @@ const PainelAnalista = () => {
                     <Link to="/" className="back-link">← Voltar</Link>
                 </div>
 
-                {/* BOTÃO DE EXPORTAR E LIMPAR */}
                 {userData?.role === 'adm' && (
                     <div style={{ display: 'flex', gap: '10px' }}>
                         {!aguardandoConfirmacao ? (
@@ -147,7 +151,7 @@ const PainelAnalista = () => {
                 )}
             </header>
 
-            {/* MODAL DE FINALIZAÇÃO */}
+            {/* MODAL 1: FINALIZAÇÃO (ESCRITA) */}
             {mostrarModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
@@ -155,33 +159,19 @@ const PainelAnalista = () => {
                             <h2>Encerrar Chamado #{chamadoParaFinalizar?.numeroOs}</h2>
                             <button onClick={() => setMostrarModal(false)} className="btn-close-modal"><FiX /></button>
                         </div>
-
+                        <div style={{ background: '#f1f5f9', padding: '15px', borderRadius: '8px', borderLeft: '5px solid #3b82f6', marginBottom: '20px' }}>
+                            <strong style={{ color: '#1e293b', fontSize: '0.9rem', display: 'block', marginBottom: '5px' }}>📝 Reclamação do Usuário:</strong>
+                            <p style={{ margin: 0, color: '#475569', fontSize: '0.95rem', whiteSpace: 'pre-wrap' }}>{chamadoParaFinalizar?.descricao}</p>
+                        </div>
                         <form onSubmit={handleFinalizarChamado}>
                             <div className="input-group" style={{ marginBottom: '15px' }}>
-                                <label>Patrimônio / TAG (ou S/P)</label>
-                                <input
-                                    type="text"
-                                    className="form-input"
-                                    style={{ textTransform: 'uppercase' }}
-                                    placeholder="Número do patrimônio"
-                                    value={patrimonio}
-                                    onChange={(e) => setPatrimonio(e.target.value)}
-                                    required
-                                />
+                                <label>Patrimônio / TAG</label>
+                                <input type="text" className="form-input" style={{ textTransform: 'uppercase' }} value={patrimonio} onChange={(e) => setPatrimonio(e.target.value)} required />
                             </div>
-
                             <div className="input-group">
                                 <label>Parecer Técnico</label>
-                                <textarea
-                                    className="form-input"
-                                    style={{ minHeight: '100px' }}
-                                    placeholder="O que foi feito?"
-                                    value={parecerTecnico}
-                                    onChange={(e) => setParecerTecnico(e.target.value)}
-                                    required
-                                />
+                                <textarea className="form-input" style={{ minHeight: '100px' }} value={parecerTecnico} onChange={(e) => setParecerTecnico(e.target.value)} required />
                             </div>
-
                             <div className="modal-actions-row" style={{ marginTop: '20px' }}>
                                 <button type="button" onClick={() => setMostrarModal(false)} className="btn-cancelar">Cancelar</button>
                                 <button type="submit" className="btn-salvar-modern">Finalizar Chamado</button>
@@ -191,7 +181,45 @@ const PainelAnalista = () => {
                 </div>
             )}
 
-            {/* TABELA */}
+            {/* MODAL 2: VISUALIZAÇÃO (APENAS LEITURA) */}
+            {mostrarDetalhes && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ borderTop: '8px solid #10b981' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                            <h2>Detalhes da OS #{chamadoSelecionado?.numeroOs}</h2>
+                            <button onClick={() => setMostrarDetalhes(false)} className="btn-close-modal"><FiX /></button>
+                        </div>
+
+                        <div className="detalhes-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
+                            <p><strong>Solicitante:</strong> {chamadoSelecionado?.nome}</p>
+                            <p><strong>Unidade:</strong> {chamadoSelecionado?.unidade}</p>
+                            <p><strong>Status:</strong> <span style={{ color: '#10b981', fontWeight: 'bold' }}>{chamadoSelecionado?.status}</span></p>
+                            <p><strong>Patrimônio:</strong> {chamadoSelecionado?.patrimonio}</p>
+                        </div>
+
+                        <div style={{ marginBottom: '15px' }}>
+                            <label style={{ fontWeight: 'bold', display: 'block', color: '#64748b' }}>Descrição do Problema:</label>
+                            <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '5px', marginTop: '5px', border: '1px solid #e2e8f0' }}>
+                                {chamadoSelecionado?.descricao}
+                            </div>
+                        </div>
+
+                        <div style={{ marginBottom: '15px' }}>
+                            <label style={{ fontWeight: 'bold', display: 'block', color: '#059669' }}>Parecer Técnico (Solução):</label>
+                            <div style={{ background: '#ecfdf5', padding: '10px', borderRadius: '5px', marginTop: '5px', border: '1px solid #a7f3d0' }}>
+                                {chamadoSelecionado?.feedbackAnalista || "Nenhum parecer registrado."}
+                            </div>
+                        </div>
+
+                        <div style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'right' }}>
+                            Finalizado por {chamadoSelecionado?.tecnicoResponsavel} em {chamadoSelecionado?.finalizadoEm?.toDate().toLocaleString()}
+                        </div>
+
+                        <button onClick={() => setMostrarDetalhes(false)} className="btn-cancelar" style={{ width: '100%', marginTop: '20px' }}>Fechar Visualização</button>
+                    </div>
+                </div>
+            )}
+
             {loading ? <div className="loading">Carregando...</div> : (
                 <div className="table-wrapper">
                     <table className="modern-table">
@@ -200,6 +228,7 @@ const PainelAnalista = () => {
                                 <th>OS</th>
                                 <th>Solicitante</th>
                                 <th>Unidade</th>
+                                <th>Descrição</th>
                                 <th>Status</th>
                                 <th>Ação</th>
                             </tr>
@@ -210,6 +239,7 @@ const PainelAnalista = () => {
                                     <td>#{item.numeroOs}</td>
                                     <td>{item.nome}</td>
                                     <td>{item.unidade}</td>
+                                    <td style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.descricao}</td>
                                     <td>
                                         <span className={`badge-role ${item.status === 'aberto' ? 'user' : 'analista'}`} style={{ background: item.status === 'aberto' ? '#fee2e2' : '#dcfce7', color: item.status === 'aberto' ? '#991b1b' : '#166534' }}>
                                             {item.status}
@@ -219,7 +249,9 @@ const PainelAnalista = () => {
                                         {item.status === 'aberto' ? (
                                             <button onClick={() => abrirModalFinalizar(item)} className="btn-abrir"><FiClipboard /> Finalizar</button>
                                         ) : (
-                                            <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Concluído por: {item.tecnicoResponsavel}</span>
+                                            <button onClick={() => verDetalhesChamado(item)} className="btn-visualizar" style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                <FiEye /> Ver Resumo
+                                            </button>
                                         )}
                                     </td>
                                 </tr>

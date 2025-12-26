@@ -1,0 +1,66 @@
+.banner-seguranca {
+    background: linear-gradient(90deg, #fff3e0 0%, #ffe0b2 100%);
+    border-bottom: 2px solid #ffb74d;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+    animation: slideDownBanner 0.4s ease-out;
+}
+
+@keyframes slideDownBanner {
+    from {
+        transform: translateY(-100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+.banner-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.banner-icon {
+    color: #e65100;
+    font-size: 20px;
+}
+
+.banner-content p {
+    margin: 0;
+    color: #e65100;
+    font-size: 14px;
+}
+
+.banner-button {
+    background: #ef6c00;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.2s;
+}
+
+.banner-button:hover {
+    background: #e65100;
+    transform: scale(1.03);
+}
+
+@media (max-width: 600px) {
+    .banner-seguranca {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+}

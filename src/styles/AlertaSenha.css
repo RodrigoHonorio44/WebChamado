@@ -1,0 +1,65 @@
+.senha-expira-alerta {
+    background: linear-gradient(90deg, #fff3e0 0%, #ffe0b2 100%);
+    border-bottom: 2px solid #ffb74d;
+    padding: 12px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: slideDownAlerta 0.5s ease-out;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@keyframes slideDownAlerta {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.alerta-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #e65100;
+    font-size: 14px;
+}
+
+.alerta-icon {
+    font-size: 20px;
+}
+
+.alerta-btn {
+    background: #ef6c00;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.alerta-btn:hover {
+    background: #e65100;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(230, 81, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+    .senha-expira-alerta {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+        padding: 15px;
+    }
+}

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { auth, db } from '../api/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'; // Importado serverTimestamp
 import { FiCheck, FiX, FiUser, FiMail, FiLock, FiArrowLeft, FiBriefcase } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import CryptoJS from 'crypto-js'; // Importado CryptoJS
 
 const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
     const [name, setName] = useState('');
@@ -19,7 +20,7 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
         'Surpevisão', 'TI'
     ];
 
-    // ✅ REGRAS DE VALIDAÇÃO (Mesmas do Admin)
+    // ✅ REGRAS DE VALIDAÇÃO
     const requisitos = {
         nome: name.trim().includes(" ") && name.trim().split(" ").length >= 2,
         minimo: password.length >= 6,
@@ -43,14 +44,23 @@ const SignUpForm = ({ onRegisterSuccess, onBackToLogin }) => {
             // 2. Atualiza o Perfil no Auth
             await updateProfile(user, { displayName: name });
 
-            // 3. Salva no Firestore
+            // 3. Gera o HASH da senha para o histórico inicial de segurança
+            const senhaHash = CryptoJS.SHA256(password).toString();
+
+            // 4. Salva no Firestore com os campos de expiração
             await setDoc(doc(db, "usuarios", user.uid), {
                 uid: user.uid,
                 name: name,
                 email: email,
                 cargo: cargo,
-                role: 'user', // Nível de acesso padrão
-                createdAt: new Date().toISOString(),
+                role: 'user',
+                status: "Ativo",
+
+                // CAMPOS DE SEGURANÇA (Reset de 4 meses)
+                ultimaTrocaSenha: serverTimestamp(), // Data inicial para contagem
+                historicoSenhas: [senhaHash],       // Primeira senha no histórico
+
+                createdAt: serverTimestamp(), // Uso de serverTimestamp é melhor que ISOString
             });
 
             toast.success("Cadastro realizado com sucesso!");
