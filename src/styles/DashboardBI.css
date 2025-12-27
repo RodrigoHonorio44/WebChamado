@@ -1,0 +1,163 @@
+/* --- CONFIGURAÇÕES GERAIS --- */
+:root {
+    --pbi-blue: #0078d4;
+    --pbi-bg: #f3f2f1;
+    --pbi-card-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.dashboard-container {
+    padding: 1rem;
+    /* Reduzido para telas menores */
+    background-color: var(--pbi-bg);
+    min-height: 100vh;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+/* --- HEADER RESPONSIVO --- */
+.dashboard-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.dashboard-header h1 {
+    color: #1e293b;
+    font-size: 1.5rem;
+    /* Ajustável */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+/* --- FILTROS E BOTÕES --- */
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    /* Permite quebrar linha no celular */
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+}
+
+select,
+input[type="date"],
+.filter-btn,
+.refresh-btn {
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid #cbd5e1;
+    font-size: 0.9rem;
+    height: 40px;
+}
+
+/* --- GRID DE CARDS (KPIS) --- */
+.stats-grid {
+    display: grid;
+    /* auto-fit garante que caibam quantos cards a largura permitir */
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 1.2rem;
+    border-radius: 4px;
+    /* Estilo mais quadrado do Power BI */
+    box-shadow: var(--pbi-card-shadow);
+    text-align: left;
+    /* Alinhamento lateral estilo PBI */
+    border-left: 5px solid #3b82f6;
+    /* Bordas laterais em vez de topo */
+}
+
+.stat-card.blue {
+    border-left-color: #0078d4;
+}
+
+.stat-card.orange {
+    border-left-color: #f59e0b;
+}
+
+.stat-card.green {
+    border-left-color: #10b981;
+}
+
+.stat-card.gray {
+    border-left-color: #64748b;
+}
+
+.stat-card h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+    color: #1e293b;
+}
+
+.stat-card small {
+    color: #64748b;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+/* --- GRID DE GRÁFICOS --- */
+.charts-grid {
+    display: grid;
+    /* Em telas grandes: 2 colunas. Em telas médias/pequenas: 1 coluna */
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.chart-box {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 4px;
+    box-shadow: var(--pbi-card-shadow);
+    min-height: 350px;
+}
+
+/* --- MEDIA QUERIES (RESPONSIVIDADE MÁXIMA) --- */
+
+/* Ajustes para Celulares Pequenos (iPhone SE, etc) */
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        /* 2 cards por linha no celular */
+    }
+
+    .stat-card h2 {
+        font-size: 1.4rem;
+    }
+
+    .dashboard-header h1 {
+        font-size: 1.2rem;
+    }
+}
+
+/* Ajustes para Tablets e Desktops */
+@media (min-width: 768px) {
+    .dashboard-container {
+        padding: 2rem;
+    }
+
+    .dashboard-header {
+        flex-direction: row;
+        justify-content: space-between;
+        text-align: left;
+    }
+
+    .filters {
+        justify-content: flex-end;
+        width: auto;
+    }
+}
+
+/* Garante que os gráficos do Recharts se ajustem ao container */
+.recharts-responsive-container {
+    width: 100% !important;
+    height: 100% !important;
+}

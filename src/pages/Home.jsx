@@ -13,10 +13,9 @@ const Home = () => {
 
     return (
         <div className="home-container">
-            {/* ✅ O AVISO FICA AQUI: ELE APARECERÁ NO TOPO APENAS SE NECESSÁRIO */}
+            {/* ✅ O AVISO FICA AQUI */}
             <AlertaSeguranca userData={userData} />
 
-            {/* Header sempre visível pois a Home agora é só para logados */}
             <header className="user-header">
                 <div className="user-info">
                     <span className="user-status-dot"></span>
@@ -56,17 +55,29 @@ const Home = () => {
                                 </div>
                             </Link>
 
-                            {/* SEÇÃO TÉCNICA / ADM */}
+                            {/* SEÇÃO TÉCNICA / ANALISTA */}
                             {(userData?.role === 'analista' || userData?.role === 'adm') && (
-                                <Link to="/painel-analista" className="action-card technical">
-                                    <div className="card-icon" style={{ backgroundColor: '#fffaf0', color: '#dd6b20' }}>🛠️</div>
-                                    <div className="card-text">
-                                        <strong>Painel Técnico</strong>
-                                        <span>Fila de trabalho</span>
-                                    </div>
-                                </Link>
+                                <>
+                                    <Link to="/painel-analista" className="action-card technical">
+                                        <div className="card-icon" style={{ backgroundColor: '#fffaf0', color: '#dd6b20' }}>🛠️</div>
+                                        <div className="card-text">
+                                            <strong>Painel Técnico</strong>
+                                            <span>Fila de trabalho</span>
+                                        </div>
+                                    </Link>
+
+                                    {/* ✅ NOVO CARD: DASHBOARD DE INDICADORES (BI) */}
+                                    <Link to="/dashboard-bi" className="action-card technical">
+                                        <div className="card-icon" style={{ backgroundColor: '#f5f3ff', color: '#7c3aed' }}>📊</div>
+                                        <div className="card-text">
+                                            <strong>Indicadores BI</strong>
+                                            <span>Análise de Planilha</span>
+                                        </div>
+                                    </Link>
+                                </>
                             )}
 
+                            {/* SEÇÃO EXCLUSIVA ADM */}
                             {userData?.role === 'adm' && (
                                 <>
                                     <Link to="/admin/cadastro-patrimonio" className="action-card admin">
@@ -78,8 +89,8 @@ const Home = () => {
                                         <div className="card-text"><strong>Transferência</strong><span>Movimentar</span></div>
                                     </Link>
                                     <Link to="/admin/inventario" className="action-card admin">
-                                        <div className="card-icon" style={{ backgroundColor: '#e0f2fe', color: '#0369a1' }}>📊</div>
-                                        <div className="card-text"><strong>Inventário Geral</strong><span>Relatórios</span></div>
+                                        <div className="card-icon" style={{ backgroundColor: '#e0f2fe', color: '#0369a1' }}>📋</div>
+                                        <div className="card-text"><strong>Inventário Geral</strong><span>Listagem completa</span></div>
                                     </Link>
                                     <Link to="/admin/estoque" className="action-card admin">
                                         <div className="card-icon" style={{ backgroundColor: '#fef3c7', color: '#d97706' }}>🏬</div>

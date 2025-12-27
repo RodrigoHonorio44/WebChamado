@@ -48,10 +48,11 @@
     font-weight: 600;
 }
 
-/* Grid de Filtros */
+/* Grid de Filtros - AJUSTADO PARA NÃO CORTAR */
 .admin-painel-layout .filters-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    /* Aumentado o minmax para 260px para dar mais espaço aos textos */
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 25px;
     align-items: flex-end;
 }
@@ -65,16 +66,20 @@
     text-transform: uppercase;
 }
 
-/* Inputs e Selects */
+/* Inputs e Selects - AJUSTADO PARA NÃO CORTAR NOMES */
 .admin-painel-layout .filter-group select,
 .admin-painel-layout .filter-group input {
     width: 100%;
-    padding: 14px;
+    /* Reduzido padding vertical para 10px e lateral para 12px para o texto respirar */
+    padding: 10px 12px;
     border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.3);
     background: #ffffff !important;
     color: #1e293b;
     font-size: 15px;
+    /* Garantindo altura mínima para evitar esmagamento do texto */
+    min-height: 48px;
+    box-sizing: border-box;
 }
 
 /* --- BOTÕES DE AÇÃO --- */
@@ -122,7 +127,8 @@
     border-collapse: separate;
     border-spacing: 0;
     min-width: 1000px;
-    table-layout: fixed;
+    /* Alterado para auto para as colunas se adaptarem ao conteúdo sem cortar */
+    table-layout: auto;
 }
 
 .admin-painel-layout th {
@@ -195,7 +201,7 @@
 }
 
 /* ============================================================
-   ESTILOS DO NOVO MODAL (MELHOR QUE POPUP DO WINDOWS)
+   ESTILOS DO NOVO MODAL
    ============================================================ */
 
 .modal-baixa-overlay {
@@ -205,9 +211,7 @@
     width: 100%;
     height: 100%;
     background: rgba(15, 23, 42, 0.7);
-    /* Fundo escuro */
     backdrop-filter: blur(6px);
-    /* Efeito de desfoque */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -228,7 +232,6 @@
 .modal-baixa-icon {
     font-size: 3.5rem;
     color: #f59e0b;
-    /* Amarelo de atenção */
     margin-bottom: 20px;
     display: flex;
     justify-content: center;
@@ -275,7 +278,6 @@
 
 .btn-modal-confirmar {
     background: #e11d48;
-    /* Vermelho padrão da sua baixa */
     color: white;
 }
 
@@ -300,7 +302,14 @@
     }
 }
 
-/* --- AJUSTES MOBILE --- */
+/* --- AJUSTES RESPONSIVOS --- */
+@media (max-width: 1024px) {
+    .admin-painel-layout .filters-grid {
+        grid-template-columns: 1fr 1fr;
+        /* 2 colunas em tablets */
+    }
+}
+
 @media (max-width: 767px) {
     .admin-painel-layout {
         width: 100%;
@@ -310,6 +319,11 @@
 
     .admin-painel-layout .cadastro-equip-header {
         padding: 25px;
+    }
+
+    .admin-painel-layout .filters-grid {
+        grid-template-columns: 1fr;
+        /* 1 coluna no mobile */
     }
 
     .admin-painel-layout .actions-group {

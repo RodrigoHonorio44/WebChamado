@@ -17,7 +17,6 @@ const Inventario = () => {
     const [statusFiltro, setStatusFiltro] = useState('Ativo');
     const [buscaPatrimonio, setBuscaPatrimonio] = useState('');
 
-    // --- ESTADO PARA O MODAL ---
     const [modalBaixa, setModalBaixa] = useState({ aberto: false, id: null, nome: '' });
 
     const navigate = useNavigate();
@@ -76,7 +75,6 @@ const Inventario = () => {
         return String(item.patrimonio) === termoBusca;
     });
 
-    // --- FUNÇÕES DO MODAL ---
     const abrirModalConfirmacao = (id, nome) => {
         setModalBaixa({ aberto: true, id, nome });
     };
@@ -99,6 +97,7 @@ const Inventario = () => {
         }
     };
 
+    // --- FUNÇÃO DE EXPORTAÇÃO ATUALIZADA ---
     const exportarExcelCompleto = (e) => {
         if (e) e.preventDefault();
         if (itens.length === 0) return toast.error("Carregue os dados primeiro.");
@@ -106,24 +105,46 @@ const Inventario = () => {
         const wb = XLSX.utils.book_new();
         const unidades = ["Hospital conde", "upa de Santa rita", "upa de inoã", "samu do barroco", "samu de ponta negra"];
 
+        // Planilhas de Ativos por Unidade
         unidades.forEach(unid => {
             const ativosDaUnidade = itens.filter(i => i.status === 'Ativo' && i.unidade?.toLowerCase() === unid.toLowerCase());
             if (ativosDaUnidade.length > 0) {
-                const dados = ativosDaUnidade.map(i => ({ Patrimonio: i.patrimonio, Equipamento: i.nome, Setor: i.setor, Status: i.status }));
+                const dados = ativosDaUnidade.map(i => ({
+                    Patrimonio: i.patrimonio,
+                    Equipamento: i.nome,
+                    Setor: i.setor,
+                    Status: i.status
+                }));
                 const ws = XLSX.utils.json_to_sheet(dados);
                 XLSX.utils.book_append_sheet(wb, ws, unid.toUpperCase().substring(0, 31));
             }
         });
 
+        // Planilha de Itens Baixados com DATA DE BAIXA
         const baixados = itens.filter(i => i.status === 'Baixado');
         if (baixados.length > 0) {
-            const dadosBaixados = baixados.map(i => ({ Patrimonio: i.patrimonio, Equipamento: i.nome, Unidade: i.unidade, Setor: i.setor, Status: i.status }));
+            const dadosBaixados = baixados.map(i => {
+                // Converte o Timestamp do Firebase para String legível
+                let dataFormatada = "---";
+                if (i.dataBaixa && typeof i.dataBaixa.toDate === 'function') {
+                    dataFormatada = i.dataBaixa.toDate().toLocaleDateString('pt-BR');
+                }
+
+                return {
+                    Patrimonio: i.patrimonio,
+                    Equipamento: i.nome,
+                    Unidade: i.unidade,
+                    Setor: i.setor,
+                    Status: i.status,
+                    "Data da Baixa": dataFormatada // Coluna adicionada
+                };
+            });
             const wsBaixados = XLSX.utils.json_to_sheet(dadosBaixados);
             XLSX.utils.book_append_sheet(wb, wsBaixados, "ITENS BAIXADOS");
         }
 
         XLSX.writeFile(wb, `INVENTARIO_DETALHADO.xlsx`);
-        toast.success("Excel gerado!");
+        toast.success("Excel gerado com datas de baixa!");
     };
 
     if (loading) return <div className="loading">Carregando...</div>;
@@ -219,7 +240,6 @@ const Inventario = () => {
                 </table>
             </div>
 
-            {/* --- MODAL DE BAIXA --- */}
             {modalBaixa.aberto && (
                 <div className="modal-baixa-overlay">
                     <div className="modal-baixa-card">

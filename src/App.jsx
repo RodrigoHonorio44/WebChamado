@@ -27,7 +27,8 @@ import Inventario from './pages/Inventario';
 import Estoque from './pages/Estoque';
 import Suporte from './pages/Suporte';
 import Termos from './pages/Termos';
-import TrocarSenha from './pages/TrocarSenha'; // ✅ NOVA IMPORTAÇÃO
+import TrocarSenha from './pages/TrocarSenha';
+import DashboardBI from './pages/DashboardBI'; // ✅ NOVA IMPORTAÇÃO DO BI
 
 const AppContent = () => {
   const { user, loading } = useAuth();
@@ -93,7 +94,7 @@ const AppContent = () => {
             </ProtectedRoute>
           } />
 
-          {/* 🟢 SEGURANÇA (NOVA ROTA) */}
+          {/* 🟢 SEGURANÇA */}
           <Route path="/trocar-senha" element={
             <ProtectedRoute>
               <TrocarSenha />
@@ -113,10 +114,16 @@ const AppContent = () => {
             </ProtectedRoute>
           } />
 
-          {/* 🔵 ROTA DO ANALISTA */}
+          {/* 🔵 ROTA DO ANALISTA / BI */}
           <Route path="/painel-analista" element={
             <ProtectedRoute roleRequired="analista">
               <PainelAnalista />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/dashboard-bi" element={
+            <ProtectedRoute roleRequired="analista">
+              <DashboardBI />
             </ProtectedRoute>
           } />
 
