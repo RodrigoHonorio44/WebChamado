@@ -20,11 +20,19 @@ const Estoque = () => {
 
     const unidades = ["Hospital Conde", "Upa de Inoã", "Upa de Santa Rita", "Samu Barroco", "Samu Ponta Negra"];
 
+    // ✅ ATUALIZADO: Busca agora aceita 'patrimonio' ou 'Patrimonio'
     const carregarEstoquePatrimonio = async () => {
         setLoading(true);
         try {
             const ativosRef = collection(db, "ativos");
-            const q = query(ativosRef, where("setor", "==", "patrimonio"), where("status", "==", "Ativo"));
+
+            // O operador 'in' funciona como um "OU" (OR)
+            const q = query(
+                ativosRef,
+                where("setor", "in", ["patrimonio", "Patrimonio"]),
+                where("status", "==", "Ativo")
+            );
+
             const querySnapshot = await getDocs(q);
             const lista = querySnapshot.docs.map(doc => ({
                 id: doc.id,
@@ -55,7 +63,8 @@ const Estoque = () => {
 
             await updateDoc(ativoRef, {
                 unidade: dadosSaida.novaUnidade,
-                setor: dadosSaida.novoSetor,
+                // Padronizamos para minúsculo no salvamento para facilitar buscas futuras
+                setor: dadosSaida.novoSetor.toLowerCase().trim(),
                 patrimonio: patrimonioFinal,
                 ultimaMovimentacao: serverTimestamp()
             });
@@ -149,7 +158,6 @@ const Estoque = () => {
                         </div>
 
                         <form onSubmit={handleSaida}>
-                            {/* CAMPO CONDICIONAL PARA S/P COM VISUAL MELHORADO */}
                             {itemSelecionado.patrimonio?.toUpperCase() === 'S/P' && (
                                 <div className="alerta-sp-form">
                                     <label>Este item não tem patrimônio. Identifique-o agora:</label>

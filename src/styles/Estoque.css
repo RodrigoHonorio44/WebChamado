@@ -32,13 +32,12 @@
     gap: 15px;
 }
 
-/* Subtítulo e link de voltar com letras brancas */
 .estoque-layout .estoque-header p,
 .estoque-layout .back-link {
     color: #ffffff !important;
 }
 
-/* Botões Superiores - Lado a lado no PC */
+/* Botões Superiores */
 .estoque-layout .header-actions {
     display: flex;
     flex-direction: row;
@@ -57,6 +56,12 @@
     cursor: pointer;
     box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
     white-space: nowrap;
+    transition: transform 0.2s;
+}
+
+.estoque-layout .btn-atualizar:hover {
+    transform: translateY(-2px);
+    background: #059669;
 }
 
 .estoque-layout .back-link {
@@ -70,12 +75,11 @@
     white-space: nowrap;
 }
 
-/* Tabela - Configuração para Monitor 27" e Scroll Mobile */
+/* Tabela */
 .estoque-layout .tabela-container {
     padding: 40px;
     background: white;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
 }
 
 .estoque-layout table {
@@ -98,52 +102,79 @@
 }
 
 .estoque-layout td {
-    padding: 20px 25px;
+    padding: 18px 25px;
     border-bottom: 1px solid #f1f5f9;
     font-size: 15px;
     color: #334155;
-    white-space: nowrap;
+    vertical-align: middle;
+    white-space: normal;
+    /* Nome do equipamento quebra linha aqui */
+    word-wrap: break-word;
+    line-height: 1.4;
 }
 
-/* Larguras para Monitor 27" */
-.estoque-layout th:nth-child(1) {
-    width: 250px;
+.linha-estoque {
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
-/* Equipamento */
-.estoque-layout th:nth-child(2) {
+.linha-estoque:hover {
+    background-color: #f1f5f9;
+}
+
+/* Larguras das Colunas */
+.estoque-layout th:nth-child(1),
+.estoque-layout td:nth-child(1) {
+    width: 380px;
+}
+
+.estoque-layout th:nth-child(2),
+.estoque-layout td:nth-child(2) {
     width: 180px;
 }
 
-/* Patrimônio */
-.estoque-layout th:nth-child(3) {
-    width: 150px;
+.estoque-layout th:nth-child(3),
+.estoque-layout td:nth-child(3) {
+    width: 160px;
 }
 
-/* Estado */
-.estoque-layout th:nth-child(4) {
-    width: 100px;
+.estoque-layout th:nth-child(4),
+.estoque-layout td:nth-child(4) {
+    width: 80px;
+    text-align: center;
 }
 
-/* Qtd */
-.estoque-layout th:nth-child(5) {
+.estoque-layout th:nth-child(5),
+.estoque-layout td:nth-child(5) {
     width: auto;
 }
 
-/* Observações */
-
-/* Status "Aguardando Manutenção" com Letra Branca */
-.estoque-layout .status-badge.manutenção,
-.estoque-layout .status-manutencao {
-    background-color: #ef4444 !important;
-    color: #ffffff !important;
+/* Status Badges */
+.status-badge {
     padding: 6px 12px;
     border-radius: 6px;
     font-weight: 700;
     font-size: 12px;
+    display: inline-block;
+    text-transform: capitalize;
 }
 
-/* --- ESTILOS DO MODAL E FORMULÁRIO (VISUAL NOVO) --- */
+.status-badge.novo {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.usado {
+    background: #fef9c3;
+    color: #854d0e;
+}
+
+.status-badge.manutenção {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* --- MODAL E FORMULÁRIO (ESTILOS RESTAURADOS) --- */
 .estoque-modal-overlay {
     position: fixed;
     top: 0;
@@ -166,6 +197,19 @@
     width: 100%;
     max-width: 500px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .estoque-modal-content h2 {
@@ -177,16 +221,22 @@
     margin-bottom: 20px;
 }
 
+/* Card Azul de Detalhes */
 .item-details-card {
     background: #eff6ff;
-    padding: 12px 15px;
+    padding: 15px;
     border-radius: 8px;
     margin-bottom: 20px;
     border-left: 4px solid #2563eb;
-    font-size: 14px;
 }
 
-/* Campo Especial S/P */
+.item-details-card p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #1e40af;
+}
+
+/* Alerta de Patrimônio S/P (Laranja) */
 .alerta-sp-form {
     background: #fff7ed;
     border: 1px solid #fed7aa;
@@ -204,6 +254,7 @@
     margin-bottom: 8px;
 }
 
+/* Grupos de Input */
 .estoque-form-group {
     margin-bottom: 18px;
 }
@@ -224,8 +275,19 @@
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     background: #f8fafc;
+    color: #334155;
+    font-size: 14px;
+    transition: border-color 0.2s;
 }
 
+.estoque-form-group input:focus,
+.estoque-form-group select:focus {
+    outline: none;
+    border-color: #2563eb;
+    background: #ffffff;
+}
+
+/* Botões do Modal */
 .modal-actions-container {
     display: flex;
     gap: 12px;
@@ -241,6 +303,11 @@
     border-radius: 10px;
     font-weight: 700;
     cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-confirmar-transferencia:hover:not(:disabled) {
+    background: #059669;
 }
 
 .btn-modal-cancelar {
@@ -254,23 +321,20 @@
     cursor: pointer;
 }
 
-/* --- RESPONSIVIDADE (MOBILE) --- */
+.btn-modal-cancelar:hover {
+    background: #e2e8f0;
+}
+
+/* --- RESPONSIVIDADE --- */
 @media (max-width: 768px) {
-    .estoque-layout .estoque-header {
-        padding: 20px;
-        flex-direction: column;
-        align-items: flex-start;
+    .estoque-layout table {
+        table-layout: auto;
+        min-width: 850px;
     }
 
     .estoque-layout .header-actions {
         width: 100%;
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 10px;
-    }
-
-    .estoque-layout table {
-        table-layout: auto;
-        min-width: 850px;
     }
 }
