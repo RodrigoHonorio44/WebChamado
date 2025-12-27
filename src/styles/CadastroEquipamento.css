@@ -1,4 +1,4 @@
-/* Container Principal com largura otimizada para Desktop */
+/* Container Principal */
 .cadastro-equip-container {
     max-width: 850px;
     margin: 30px auto;
@@ -6,6 +6,7 @@
     background: #ffffff;
     border-radius: 15px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
 }
 
 /* Título e Subtítulo */
@@ -21,17 +22,17 @@
     margin: 0;
 }
 
-/* Grid de Formulário Inteligente */
+/* Grid de Formulário */
 .equip-form {
     display: flex;
     flex-direction: column;
     gap: 25px;
 }
 
-/* Linha Dupla (Lado a Lado) */
+/* Linha Dupla - Ajustada com minmax para não espremer o texto */
 .form-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 30px;
 }
 
@@ -40,6 +41,8 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    min-width: 0;
+    /* Evita que o contêiner estoure */
 }
 
 .form-group label {
@@ -50,18 +53,53 @@
     letter-spacing: 0.5px;
 }
 
+/* Estilo Base para todos os campos */
 .form-group input,
 .form-group select,
 .form-group textarea {
-    padding: 14px;
+    padding: 10px;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     background-color: #fcfcfc;
     font-size: 16px;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    color: #2d3748;
+    width: 100%;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+    text-align: left;
+    /* Garante alinhamento à esquerda */
 }
 
-/* Efeito de Foco Profissional */
+/* --- CORREÇÃO ESPECÍFICA PARA O SELECT --- */
+.form-group select {
+    cursor: pointer;
+    appearance: none;
+    /* Remove a seta nativa que causa bugs de espaço */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+
+    /* Adiciona seta customizada via background */
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 16px;
+
+    /* Padding extra à direita para não sobrepor a seta */
+    padding-right: 40px;
+
+    /* Remove indentações que podem cortar o início */
+    text-indent: 0.01px;
+    text-overflow: "";
+}
+
+/* Garante que os nomes dentro da lista aberta não cortem */
+.form-group select option {
+    padding: 10px;
+    background-color: #fff;
+    color: #2d3748;
+}
+
+/* Foco */
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
@@ -71,7 +109,7 @@
     background-color: #fff;
 }
 
-/* Botão de Cadastro (Estilo Hospitalar/Saúde) */
+/* Botão */
 .btn-registrar-patrimonio {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
@@ -94,7 +132,7 @@
     transform: scale(0.98);
 }
 
-/* Responsivo para Tablets e Celulares */
+/* Responsivo */
 @media (max-width: 768px) {
     .form-row {
         grid-template-columns: 1fr;
@@ -103,6 +141,6 @@
 
     .cadastro-equip-container {
         padding: 20px;
-        margin: 15px;
+        margin: 15px auto;
     }
 }
