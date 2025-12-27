@@ -1,81 +1,193 @@
 /* --- CONFIGURAÇÕES GERAIS --- */
 :root {
     --pbi-blue: #0078d4;
+    --pbi-blue-hover: #005a9e;
     --pbi-bg: #f3f2f1;
-    --pbi-card-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    --pbi-card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
 }
 
 .dashboard-container {
-    padding: 1rem;
-    /* Reduzido para telas menores */
+    padding: 1.5rem;
     background-color: var(--pbi-bg);
     min-height: 100vh;
     font-family: 'Inter', 'Segoe UI', sans-serif;
 }
 
-/* --- HEADER RESPONSIVO --- */
+/* --- NOVO HEADER ORGANIZADO --- */
 .dashboard-header {
+    background: white;
+    padding: 1.5rem 2rem;
+    border-radius: 12px;
+    box-shadow: var(--pbi-card-shadow);
+    margin-bottom: 2rem;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
+    gap: 1.5rem;
 }
 
-.dashboard-header h1 {
-    color: #1e293b;
-    font-size: 1.5rem;
-    /* Ajustável */
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+}
+
+.header-brand {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 1.5rem;
+}
+
+.header-brand h1 {
+    color: var(--text-main);
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
     margin: 0;
 }
 
-/* --- FILTROS E BOTÕES --- */
-.filters {
+/* BOTÃO VOLTAR */
+.back-btn {
     display: flex;
-    flex-wrap: wrap;
-    /* Permite quebrar linha no celular */
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+    height: 36px;
+    background-color: #fff;
+    border: 1.5px solid var(--border-color);
+    border-radius: 50px;
+    color: var(--text-muted);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-select,
-input[type="date"],
-.filter-btn,
-.refresh-btn {
-    padding: 8px 12px;
-    border-radius: 4px;
-    border: 1px solid #cbd5e1;
+.back-btn:hover {
+    background-color: var(--pbi-blue);
+    color: white;
+    border-color: var(--pbi-blue);
+}
+
+/* BOTÃO SINCRONIZAR (TOP) */
+.refresh-btn-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #eff6ff;
+    color: var(--pbi-blue);
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.refresh-btn-top:hover {
+    background: var(--pbi-blue);
+    color: white;
+}
+
+/* --- BARRA DE FILTROS (EVITA AMONTOAR) --- */
+.filters-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-end;
+}
+
+.filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-item label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* GRUPO DE DATAS */
+.date-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 4px 12px;
+}
+
+.date-group input {
+    border: none;
+    background: transparent;
     font-size: 0.9rem;
-    height: 40px;
+    color: var(--text-main);
+    outline: none;
+    height: 32px;
+}
+
+.filter-item select {
+    height: 42px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: #f8fafc;
+    font-size: 0.9rem;
+}
+
+.apply-btn {
+    height: 42px;
+    padding: 0 25px;
+    background: var(--pbi-blue);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.apply-btn:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 4px 12px rgba(0, 120, 212, 0.3);
 }
 
 /* --- GRID DE CARDS (KPIS) --- */
 .stats-grid {
     display: grid;
-    /* auto-fit garante que caibam quantos cards a largura permitir */
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
     margin-bottom: 2rem;
 }
 
 .stat-card {
     background: white;
-    padding: 1.2rem;
-    border-radius: 4px;
-    /* Estilo mais quadrado do Power BI */
+    padding: 1.5rem;
+    border-radius: 12px;
     box-shadow: var(--pbi-card-shadow);
-    text-align: left;
-    /* Alinhamento lateral estilo PBI */
-    border-left: 5px solid #3b82f6;
-    /* Bordas laterais em vez de topo */
+    border-left: 6px solid #3b82f6;
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
 }
 
 .stat-card.blue {
-    border-left-color: #0078d4;
+    border-left-color: var(--pbi-blue);
 }
 
 .stat-card.orange {
@@ -91,73 +203,89 @@ input[type="date"],
 }
 
 .stat-card h2 {
-    font-size: 1.8rem;
-    font-weight: 700;
-    margin: 0;
-    color: #1e293b;
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin: 0.5rem 0 0 0;
+    color: var(--text-main);
 }
 
 .stat-card small {
-    color: #64748b;
-    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 700;
     text-transform: uppercase;
-    font-weight: 600;
 }
 
 /* --- GRID DE GRÁFICOS --- */
-.charts-grid {
+.charts-main {
     display: grid;
-    /* Em telas grandes: 2 colunas. Em telas médias/pequenas: 1 coluna */
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
     gap: 1.5rem;
 }
 
-.chart-box {
+.chart-item {
     background: white;
     padding: 1.5rem;
-    border-radius: 4px;
+    border-radius: 12px;
     box-shadow: var(--pbi-card-shadow);
-    min-height: 350px;
 }
 
-/* --- MEDIA QUERIES (RESPONSIVIDADE MÁXIMA) --- */
+.chart-item h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
-/* Ajustes para Celulares Pequenos (iPhone SE, etc) */
-@media (max-width: 480px) {
-    .stats-grid {
-        grid-template-columns: 1fr 1fr;
-        /* 2 cards por linha no celular */
+/* --- LOADING --- */
+.loading-screen {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    color: var(--pbi-blue);
+    font-weight: 600;
+}
+
+.spin {
+    animation: rotate 1s linear infinite;
+    font-size: 2rem;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
     }
 
-    .stat-card h2 {
-        font-size: 1.4rem;
-    }
-
-    .dashboard-header h1 {
-        font-size: 1.2rem;
+    to {
+        transform: rotate(360deg);
     }
 }
 
-/* Ajustes para Tablets e Desktops */
-@media (min-width: 768px) {
-    .dashboard-container {
-        padding: 2rem;
+/* --- RESPONSIVIDADE --- */
+@media (max-width: 768px) {
+    .header-top {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
     }
 
-    .dashboard-header {
-        flex-direction: row;
-        justify-content: space-between;
-        text-align: left;
+    .filters-bar {
+        flex-direction: column;
+        align-items: stretch;
     }
 
-    .filters {
-        justify-content: flex-end;
-        width: auto;
+    .date-group {
+        flex-direction: column;
+        padding: 10px;
     }
-}
 
-/* Garante que os gráficos do Recharts se ajustem ao container */
-.recharts-responsive-container {
-    width: 100% !important;
-    height: 100% !important;
+    .charts-main {
+        grid-template-columns: 1fr;
+    }
 }
