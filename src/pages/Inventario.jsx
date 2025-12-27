@@ -53,15 +53,16 @@ const Inventario = () => {
             const querySnapshot = await getDocs(collection(db, "ativos"));
             const todosOsDados = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+            // Filtro de tela (não afeta o Excel, pois o Excel usa a lista bruta tratada)
             const filtrados = todosOsDados.filter(item => {
                 const matchUnidade = unidadeFiltro === 'Todas' ||
-                    item.unidade?.toLowerCase() === unidadeFiltro.toLowerCase();
+                    item.unidade?.toLowerCase().trim() === unidadeFiltro.toLowerCase().trim();
                 const matchStatus = statusFiltro === 'Todos' || item.status === statusFiltro;
                 return matchUnidade && matchStatus;
             });
 
-            setItens(filtrados);
-            if (filtrados.length === 0) toast.info("Nenhum item encontrado.");
+            setItens(todosOsDados); // Armazenamos tudo para a exportação ser completa
+            if (filtrados.length === 0) toast.info("Nenhum item encontrado para esta visualização.");
         } catch (error) {
             toast.error("Erro ao carregar dados.");
         } finally {
@@ -69,10 +70,14 @@ const Inventario = () => {
         }
     };
 
-    const itensFiltradosParaExibir = itens.filter(item => {
+    // Filtro para a tabela na tela
+    const itensParaExibirNaTela = itens.filter(item => {
         const termoBusca = buscaPatrimonio.trim();
-        if (termoBusca === "") return true;
-        return String(item.patrimonio) === termoBusca;
+        const matchBusca = termoBusca === "" || String(item.patrimonio).includes(termoBusca);
+        const matchUnidade = unidadeFiltro === 'Todas' || item.unidade?.toLowerCase().trim() === unidadeFiltro.toLowerCase().trim();
+        const matchStatus = statusFiltro === 'Todos' || item.status === statusFiltro;
+
+        return matchBusca && matchUnidade && matchStatus;
     });
 
     const abrirModalConfirmacao = (id, nome) => {
@@ -97,37 +102,51 @@ const Inventario = () => {
         }
     };
 
-    // --- FUNÇÃO DE EXPORTAÇÃO ATUALIZADA ---
+    // --- FUNÇÃO DE EXPORTAÇÃO ROBUSTA ---
     const exportarExcelCompleto = (e) => {
         if (e) e.preventDefault();
-        if (itens.length === 0) return toast.error("Carregue os dados primeiro.");
+        if (itens.length === 0) return toast.error("Clique em 'Consultar' primeiro para carregar os dados.");
 
         const wb = XLSX.utils.book_new();
-        const unidades = ["Hospital conde", "upa de Santa rita", "upa de inoã", "samu do barroco", "samu de ponta negra"];
 
-        // Planilhas de Ativos por Unidade
-        unidades.forEach(unid => {
-            const ativosDaUnidade = itens.filter(i => i.status === 'Ativo' && i.unidade?.toLowerCase() === unid.toLowerCase());
-            if (ativosDaUnidade.length > 0) {
-                const dados = ativosDaUnidade.map(i => ({
-                    Patrimonio: i.patrimonio,
-                    Equipamento: i.nome,
-                    Setor: i.setor,
-                    Status: i.status
-                }));
-                const ws = XLSX.utils.json_to_sheet(dados);
-                XLSX.utils.book_append_sheet(wb, ws, unid.toUpperCase().substring(0, 31));
+        // Mapeamento idêntico ao que é salvo no Banco (Normalizado)
+        const configuracaoAbas = [
+            { label: "HOSPITAL CONDE", busca: "hospital conde" },
+            { label: "UPA DE SANTA RITA", busca: "upa de santa rita" },
+            { label: "UPA DE INOÃ", busca: "upa de inoã" },
+            { label: "SAMU BARROCO", busca: "samu barroco" },
+            { label: "SAMU PONTA NEGRA", busca: "samu ponta negra" }
+        ];
+
+        configuracaoAbas.forEach(aba => {
+            // Filtra itens ATIVOS para cada unidade, removendo espaços e ignorando maiúsculas
+            const dadosUnidade = itens.filter(i =>
+                i.status === 'Ativo' &&
+                i.unidade?.toLowerCase().trim() === aba.busca
+            ).map(i => ({
+                Patrimonio: i.patrimonio,
+                Equipamento: i.nome,
+                Setor: i.setor,
+                Estado: i.estado,
+                Quantidade: i.quantidade,
+                Observacoes: i.observacoes
+            }));
+
+            if (dadosUnidade.length > 0) {
+                const ws = XLSX.utils.json_to_sheet(dadosUnidade);
+                XLSX.utils.book_append_sheet(wb, ws, aba.label);
             }
         });
 
-        // Planilha de Itens Baixados com DATA DE BAIXA
+        // Aba de Baixados (Independente da unidade)
         const baixados = itens.filter(i => i.status === 'Baixado');
         if (baixados.length > 0) {
             const dadosBaixados = baixados.map(i => {
-                // Converte o Timestamp do Firebase para String legível
                 let dataFormatada = "---";
-                if (i.dataBaixa && typeof i.dataBaixa.toDate === 'function') {
+                if (i.dataBaixa?.toDate) {
                     dataFormatada = i.dataBaixa.toDate().toLocaleDateString('pt-BR');
+                } else if (i.dataBaixa?.seconds) {
+                    dataFormatada = new Date(i.dataBaixa.seconds * 1000).toLocaleDateString('pt-BR');
                 }
 
                 return {
@@ -136,18 +155,18 @@ const Inventario = () => {
                     Unidade: i.unidade,
                     Setor: i.setor,
                     Status: i.status,
-                    "Data da Baixa": dataFormatada // Coluna adicionada
+                    "Data da Baixa": dataFormatada
                 };
             });
             const wsBaixados = XLSX.utils.json_to_sheet(dadosBaixados);
             XLSX.utils.book_append_sheet(wb, wsBaixados, "ITENS BAIXADOS");
         }
 
-        XLSX.writeFile(wb, `INVENTARIO_DETALHADO.xlsx`);
-        toast.success("Excel gerado com datas de baixa!");
+        XLSX.writeFile(wb, `INVENTARIO_GERAL_${new Date().toISOString().split('T')[0]}.xlsx`);
+        toast.success("Excel gerado com sucesso!");
     };
 
-    if (loading) return <div className="loading">Carregando...</div>;
+    if (loading) return <div className="loading">Carregando permissões...</div>;
     if (!isAdmin) return null;
 
     return (
@@ -155,7 +174,7 @@ const Inventario = () => {
             <header className="cadastro-equip-header">
                 <div className="header-title-container">
                     <h1><FiShield /> Painel Administrativo</h1>
-                    <Link to="/" className="back-link-admin"><FiLogOut /> Sair do Painel</Link>
+                    <Link to="/" className="back-link-admin"><FiLogOut /> Sair</Link>
                 </div>
 
                 <div className="filters-grid">
@@ -166,8 +185,8 @@ const Inventario = () => {
                             <option value="Hospital conde">Hospital Conde</option>
                             <option value="upa de Santa rita">UPA de Santa Rita</option>
                             <option value="upa de inoã">UPA de Inoã</option>
-                            <option value="samu do barroco">SAMU do Barroco</option>
-                            <option value="samu de ponta negra">SAMU de Ponta Negra</option>
+                            <option value="samu barroco">SAMU Barroco</option>
+                            <option value="samu de ponta negra">SAMU Ponta Negra</option>
                         </select>
                     </div>
 
@@ -184,7 +203,7 @@ const Inventario = () => {
                         <label>BUSCAR PATRIMÔNIO</label>
                         <input
                             type="text"
-                            placeholder="Ex: 12345"
+                            placeholder="Pesquisar TAG..."
                             value={buscaPatrimonio}
                             onChange={(e) => setBuscaPatrimonio(e.target.value)}
                         />
@@ -213,13 +232,13 @@ const Inventario = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {itensFiltradosParaExibir.map(item => (
+                        {itensParaExibirNaTela.map(item => (
                             <tr key={item.id} className="row-hover">
                                 <td className="td-patrimonio">#{item.patrimonio}</td>
                                 <td>{item.nome}</td>
                                 <td><span className="unit-tag">{item.unidade}</span> <br /> <small>{item.setor}</small></td>
                                 <td>
-                                    <span className={`status-badge ${item.status.toLowerCase()}`}>
+                                    <span className={`status-badge ${item.status?.toLowerCase()}`}>
                                         {item.status}
                                     </span>
                                 </td>
@@ -247,7 +266,7 @@ const Inventario = () => {
                             <FiAlertTriangle />
                         </div>
                         <h3>Confirmar Baixa?</h3>
-                        <p>Você está prestes a remover o item <strong>{modalBaixa.nome}</strong> do inventário ativo.</p>
+                        <p>Você está prestes a remover o item <strong>{modalBaixa.nome}</strong>.</p>
                         <div className="modal-baixa-actions">
                             <button className="btn-modal-cancelar" onClick={fecharModal}>
                                 <FiX /> Cancelar
