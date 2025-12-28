@@ -168,9 +168,9 @@ const DashboardBI = () => {
 
             <div className="stats-grid">
                 <div className="stat-card blue"><small>Total O.S</small><h2>{stats.total}</h2></div>
-                <div className="stat-card orange"><small>Abertos</small><h2>{stats.abertos}</h2></div>
                 <div className="stat-card green"><small>Fechados</small><h2>{stats.fechados}</h2></div>
-                <div className="stat-card gray"><small>Baixados</small><h2>{stats.baixas}</h2></div>
+                <div className="stat-card orange"><small>Abertos</small><h2>{stats.abertos}</h2></div>
+                <div className="stat-card gray"><small>Inutilizados</small><h2>{stats.baixas}</h2></div>
             </div>
 
             <div className="charts-main">
