@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-toastify';
-import { FiX, FiClipboard, FiDownload, FiEye } from 'react-icons/fi'; // Adicionei FiEye
+import { FiX, FiClipboard, FiDownload, FiEye } from 'react-icons/fi';
 import '../styles/MeusChamados.css';
 
 const PainelAnalista = () => {
@@ -15,14 +15,27 @@ const PainelAnalista = () => {
     const [aguardandoConfirmacao, setAguardandoConfirmacao] = useState(false);
 
     // Modais
-    const [mostrarModal, setMostrarModal] = useState(false); // Modal de fechar
-    const [mostrarDetalhes, setMostrarDetalhes] = useState(false); // Modal de ver detalhes
+    const [mostrarModal, setMostrarModal] = useState(false);
+    const [mostrarDetalhes, setMostrarDetalhes] = useState(false);
 
     const [chamadoParaFinalizar, setChamadoParaFinalizar] = useState(null);
     const [chamadoSelecionado, setChamadoSelecionado] = useState(null);
 
     const [parecerTecnico, setParecerTecnico] = useState("");
     const [patrimonio, setPatrimonio] = useState("");
+
+    // Função para formatar Timestamps do Firebase
+    const formatarDataHora = (timestamp) => {
+        if (!timestamp) return "---";
+        const date = timestamp.toDate();
+        return date.toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
 
     const buscarTodosChamados = async () => {
         setLoading(true);
@@ -54,7 +67,7 @@ const PainelAnalista = () => {
 
             const dadosExcel = chamados.map(c => ({
                 OS: c.numeroOs,
-                Data: c.criadoEm?.toDate().toLocaleString('pt-BR'),
+                Data_Abertura: c.criadoEm?.toDate().toLocaleString('pt-BR'),
                 Solicitante: c.nome,
                 Unidade: c.unidade,
                 Descricao: c.descricao,
@@ -151,7 +164,7 @@ const PainelAnalista = () => {
                 )}
             </header>
 
-            {/* MODAL 1: FINALIZAÇÃO (ESCRITA) */}
+            {/* MODAIS (FINALIZAÇÃO E DETALHES) PERMANECEM IGUAIS */}
             {mostrarModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
@@ -181,7 +194,6 @@ const PainelAnalista = () => {
                 </div>
             )}
 
-            {/* MODAL 2: VISUALIZAÇÃO (APENAS LEITURA) */}
             {mostrarDetalhes && (
                 <div className="modal-overlay">
                     <div className="modal-content" style={{ borderTop: '8px solid #10b981' }}>
@@ -212,7 +224,7 @@ const PainelAnalista = () => {
                         </div>
 
                         <div style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'right' }}>
-                            Finalizado por {chamadoSelecionado?.tecnicoResponsavel} em {chamadoSelecionado?.finalizadoEm?.toDate().toLocaleString()}
+                            Finalizado por {chamadoSelecionado?.tecnicoResponsavel} em {formatarDataHora(chamadoSelecionado?.finalizadoEm)}
                         </div>
 
                         <button onClick={() => setMostrarDetalhes(false)} className="btn-cancelar" style={{ width: '100%', marginTop: '20px' }}>Fechar Visualização</button>
@@ -226,6 +238,7 @@ const PainelAnalista = () => {
                         <thead>
                             <tr>
                                 <th>OS</th>
+                                <th>Aberto em</th> {/* COLUNA ADICIONADA */}
                                 <th>Solicitante</th>
                                 <th>Unidade</th>
                                 <th>Descrição</th>
@@ -237,6 +250,10 @@ const PainelAnalista = () => {
                             {chamados.map((item) => (
                                 <tr key={item.id}>
                                     <td>#{item.numeroOs}</td>
+                                    {/* CÉLULA DE DATA ADICIONADA */}
+                                    <td style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                                        {formatarDataHora(item.criadoEm)}
+                                    </td>
                                     <td>{item.nome}</td>
                                     <td>{item.unidade}</td>
                                     <td style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.descricao}</td>
