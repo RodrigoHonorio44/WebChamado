@@ -5,7 +5,11 @@ import {
     BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
     LineChart, Line, CartesianGrid, Cell
 } from 'recharts';
-import { FiActivity, FiRefreshCw, FiArrowLeft, FiLayers, FiFilter, FiCalendar, FiTrash2, FiTrendingUp, FiClock } from 'react-icons/fi';
+// Adicionei FiChevronDown e FiChevronUp para os painéis expansíveis
+import {
+    FiActivity, FiRefreshCw, FiArrowLeft, FiLayers, FiFilter,
+    FiCalendar, FiTrash2, FiTrendingUp, FiClock, FiChevronDown, FiChevronUp
+} from 'react-icons/fi';
 import '../styles/DashboardBI.css';
 
 const DashboardBI = () => {
@@ -21,6 +25,10 @@ const DashboardBI = () => {
     const [dataFim, setDataFim] = useState('');
     const [loading, setLoading] = useState(true);
     const [dadosBrutos, setDadosBrutos] = useState({ chamados: [], baixas: [] });
+
+    // ✅ NOVOS ESTADOS: Controle de visibilidade dos painéis
+    const [showTop10, setShowTop10] = useState(false);
+    const [showDetalhes, setShowDetalhes] = useState(false);
 
     const ID_DOC = "1L-TNSA0e-YAjzK_HU_vWGAJFZVqk6t2L3lIQeEDPcMI";
     const PROXY = "https://api.allorigins.win/raw?url=";
@@ -43,7 +51,6 @@ const DashboardBI = () => {
         return key ? String(obj[key] || "").trim() : "";
     };
 
-    // Converte "DD/MM/AAAA, HH:MM:SS" para Objeto Date
     const parseFullDateTime = (str) => {
         if (!str || str === "N/A" || str.length < 10) return null;
         try {
@@ -85,7 +92,6 @@ const DashboardBI = () => {
         const chamadosFiltrados = filtrarLista(chamados, 'Data');
         const baixasFiltradas = filtrarLista(baixados, 'Data');
 
-        // Cálculo de SLA
         let somaMinutos = 0;
         let totalFinalizados = 0;
 
@@ -100,7 +106,6 @@ const DashboardBI = () => {
 
         const mediaSla = totalFinalizados > 0 ? somaMinutos / totalFinalizados : 0;
         const slaFormatado = `${String(Math.floor(mediaSla / 60)).padStart(2, '0')}h ${String(Math.round(mediaSla % 60)).padStart(2, '0')}m`;
-
         const nFechados = chamadosFiltrados.filter(c => normalizar(getVal(c, 'status')).includes('FECHADO')).length;
 
         setStats({
@@ -111,7 +116,6 @@ const DashboardBI = () => {
             slaMedio: slaFormatado
         });
 
-        // Detalhes Baixas
         setListaBaixas(baixasFiltradas.map(b => ({
             equipamento: getVal(b, 'equipamento') || getVal(b, 'descricao') || 'N/A',
             unidade: getVal(b, 'unidade') || 'N/A',
@@ -119,7 +123,6 @@ const DashboardBI = () => {
             data: getVal(b, 'data') || 'N/A'
         })));
 
-        // Ranking Top 10
         const contagemRanking = baixasFiltradas.reduce((acc, b) => {
             const eq = getVal(b, 'equipamento') || getVal(b, 'descricao') || 'N/A';
             const un = getVal(b, 'unidade') || 'N/A';
@@ -132,7 +135,6 @@ const DashboardBI = () => {
 
         setTop10Baixas(Object.values(contagemRanking).sort((a, b) => b.total - a.total).slice(0, 10));
 
-        // Gráficos
         const porUnidade = chamadosFiltrados.reduce((acc, c) => {
             const u = getVal(c, 'unidade') || 'N/A';
             acc[u] = (acc[u] || 0) + 1;
@@ -179,6 +181,7 @@ const DashboardBI = () => {
                     </div>
                     <button onClick={carregarDadosSheets} className="refresh-btn-top"><FiRefreshCw /> Sincronizar</button>
                 </div>
+                {/* Filtros omitidos para brevidade, mantidos iguais ao seu código */}
                 <div className="filters-bar">
                     <div className="filter-item">
                         <label><FiFilter /> Unidade</label>
@@ -202,11 +205,7 @@ const DashboardBI = () => {
             <div className="stats-grid">
                 <div className="stat-card blue"><small>Total O.S</small><h2>{stats.total}</h2></div>
                 <div className="stat-card green"><small>Fechados</small><h2>{stats.fechados}</h2></div>
-                {/* CARD SUBSTITUÍDO: Abertos -> Média SLA */}
-                <div className="stat-card orange">
-                    <small><FiClock /> Média SLA</small>
-                    <h2>{stats.slaMedio}</h2>
-                </div>
+                <div className="stat-card orange"><small><FiClock /> Média SLA</small><h2>{stats.slaMedio}</h2></div>
                 <div className="stat-card gray"><small>Inutilizados</small><h2>{stats.baixas}</h2></div>
             </div>
 
@@ -243,48 +242,72 @@ const DashboardBI = () => {
             </div>
 
             <div className="details-section" style={{ marginTop: '20px' }}>
+
+                {/* ✅ PAINEL RANKING TOP 10 (EXPANSÍVEL) */}
                 <div className="chart-item full-width" style={{ marginBottom: '20px', borderLeft: '5px solid #f59e0b' }}>
-                    <h3 style={{ color: '#f59e0b' }}><FiTrendingUp /> Ranking: Top 10 Recorrência de Baixas</h3>
-                    <div className="table-wrapper">
-                        <table className="modern-table">
-                            <thead>
-                                <tr><th>Pos.</th><th>Equipamento</th><th>Unidade</th><th>Setor</th><th>Quantidade</th></tr>
-                            </thead>
-                            <tbody>
-                                {top10Baixas.map((item, index) => (
-                                    <tr key={index}>
-                                        <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{index + 1}º</td>
-                                        <td style={{ fontWeight: 'bold' }}>{item.nome}</td>
-                                        <td>{item.unidade}</td>
-                                        <td><span className="badge-sector">{item.setor}</span></td>
-                                        <td><span style={{ fontWeight: 'bold', color: '#b45309' }}>{item.total} un.</span></td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div
+                        className="panel-header-clickable"
+                        onClick={() => setShowTop10(!showTop10)}
+                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                    >
+                        <h3 style={{ color: '#f59e0b', margin: 0 }}><FiTrendingUp /> Ranking: Top 10 Recorrência de Baixas</h3>
+                        {showTop10 ? <FiChevronUp size={24} /> : <FiChevronDown size={24} />}
                     </div>
+
+                    {showTop10 && (
+                        <div className="table-wrapper animate-slide-down" style={{ marginTop: '15px' }}>
+                            <table className="modern-table">
+                                <thead>
+                                    <tr><th>Pos.</th><th>Equipamento</th><th>Unidade</th><th>Setor</th><th>Quantidade</th></tr>
+                                </thead>
+                                <tbody>
+                                    {top10Baixas.map((item, index) => (
+                                        <tr key={index}>
+                                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{index + 1}º</td>
+                                            <td style={{ fontWeight: 'bold' }}>{item.nome}</td>
+                                            <td>{item.unidade}</td>
+                                            <td><span className="badge-sector">{item.setor}</span></td>
+                                            <td><span style={{ fontWeight: 'bold', color: '#b45309' }}>{item.total} un.</span></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
 
+                {/* ✅ PAINEL DETALHAMENTO INDIVIDUAL (EXPANSÍVEL) */}
                 <div className="chart-item full-width">
-                    <h3><FiTrash2 /> Detalhamento Individual de Baixas</h3>
-                    <div className="table-wrapper">
-                        <table className="modern-table">
-                            <thead>
-                                <tr><th>Equipamento</th><th>Unidade</th><th>Setor</th><th>Data da Baixa</th></tr>
-                            </thead>
-                            <tbody>
-                                {listaBaixas.map((item, index) => (
-                                    <tr key={index}>
-                                        <td style={{ fontWeight: 'bold' }}>{item.equipamento}</td>
-                                        <td>{item.unidade}</td>
-                                        <td><span className="badge-sector">{item.setor}</span></td>
-                                        <td>{item.data}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div
+                        className="panel-header-clickable"
+                        onClick={() => setShowDetalhes(!showDetalhes)}
+                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                    >
+                        <h3 style={{ margin: 0 }}><FiTrash2 /> Detalhamento Individual de Baixas</h3>
+                        {showDetalhes ? <FiChevronUp size={24} /> : <FiChevronDown size={24} />}
                     </div>
+
+                    {showDetalhes && (
+                        <div className="table-wrapper animate-slide-down" style={{ marginTop: '15px' }}>
+                            <table className="modern-table">
+                                <thead>
+                                    <tr><th>Equipamento</th><th>Unidade</th><th>Setor</th><th>Data da Baixa</th></tr>
+                                </thead>
+                                <tbody>
+                                    {listaBaixas.map((item, index) => (
+                                        <tr key={index}>
+                                            <td style={{ fontWeight: 'bold' }}>{item.equipamento}</td>
+                                            <td>{item.unidade}</td>
+                                            <td><span className="badge-sector">{item.setor}</span></td>
+                                            <td>{item.data}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
+
             </div>
         </div>
     );
