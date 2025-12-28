@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../api/firebase';
-import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, addDoc, serverTimestamp, increment, runTransaction } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import '../styles/Estoque.css';
@@ -11,6 +11,8 @@ const Estoque = () => {
 
     const [itemSelecionado, setItemSelecionado] = useState(null);
     const [novoPatrimonioParaSP, setNovoPatrimonioParaSP] = useState('');
+    const [quantidadeParaRetirar, setQuantidadeParaRetirar] = useState(1);
+
     const [dadosSaida, setDadosSaida] = useState({
         novaUnidade: '',
         novoSetor: '',
@@ -20,13 +22,10 @@ const Estoque = () => {
 
     const unidades = ["Hospital Conde", "Upa de Inoã", "Upa de Santa Rita", "Samu Barroco", "Samu Ponta Negra"];
 
-    // ✅ ATUALIZADO: Busca agora aceita 'patrimonio' ou 'Patrimonio'
     const carregarEstoquePatrimonio = async () => {
         setLoading(true);
         try {
             const ativosRef = collection(db, "ativos");
-
-            // O operador 'in' funciona como um "OU" (OR)
             const q = query(
                 ativosRef,
                 where("setor", "in", ["patrimonio", "Patrimonio"]),
@@ -55,39 +54,86 @@ const Estoque = () => {
         e.preventDefault();
         setLoading(true);
 
+        const ativoRef = doc(db, "ativos", itemSelecionado.id);
+        const qtdSolicitada = Number(quantidadeParaRetirar);
+
         try {
-            const ativoRef = doc(db, "ativos", itemSelecionado.id);
-            const patrimonioFinal = (itemSelecionado.patrimonio?.toUpperCase() === 'S/P' && novoPatrimonioParaSP)
-                ? novoPatrimonioParaSP.toUpperCase().trim()
-                : itemSelecionado.patrimonio;
+            await runTransaction(db, async (transaction) => {
+                const sfDoc = await transaction.get(ativoRef);
+                if (!sfDoc.exists()) {
+                    throw new Error("O item não existe mais no banco de dados.");
+                }
 
-            await updateDoc(ativoRef, {
-                unidade: dadosSaida.novaUnidade,
-                // Padronizamos para minúsculo no salvamento para facilitar buscas futuras
-                setor: dadosSaida.novoSetor.toLowerCase().trim(),
-                patrimonio: patrimonioFinal,
-                ultimaMovimentacao: serverTimestamp()
+                const dadosOriginais = sfDoc.data();
+                const qtdAtual = Number(dadosOriginais.quantidade || 1);
+
+                if (qtdSolicitada > qtdAtual) {
+                    throw new Error(`Quantidade insuficiente! Só restam ${qtdAtual} unidades.`);
+                }
+
+                const isSP = dadosOriginais.patrimonio?.toUpperCase() === 'S/P';
+                const patrimonioFinal = (isSP && novoPatrimonioParaSP)
+                    ? novoPatrimonioParaSP.toUpperCase().trim()
+                    : dadosOriginais.patrimonio;
+
+                // --- LÓGICA DE INVENTÁRIO (CRIAÇÃO DE REGISTRO) ---
+
+                if (isSP && qtdSolicitada < qtdAtual) {
+                    // CASO 1: SAÍDA PARCIAL (Desmembramento)
+                    // Atualiza o que fica no Patrimônio
+                    transaction.update(ativoRef, {
+                        quantidade: increment(-qtdSolicitada),
+                        ultimaMovimentacao: serverTimestamp()
+                    });
+
+                    // Cria um NOVO documento para o destino (para aparecer no inventário de lá)
+                    const novoAtivoRef = doc(collection(db, "ativos"));
+                    transaction.set(novoAtivoRef, {
+                        ...dadosOriginais, // Copia todos os dados (nome, marca, categoria)
+                        id: novoAtivoRef.id,
+                        quantidade: qtdSolicitada,
+                        patrimonio: patrimonioFinal,
+                        unidade: dadosSaida.novaUnidade,
+                        setor: dadosSaida.novoSetor.toLowerCase().trim(),
+                        ultimaMovimentacao: serverTimestamp(),
+                        dataCadastro: serverTimestamp() // Data de entrada na nova unidade
+                    });
+
+                } else {
+                    // CASO 2: SAÍDA TOTAL
+                    // Apenas move o documento atual para o novo destino
+                    transaction.update(ativoRef, {
+                        unidade: dadosSaida.novaUnidade,
+                        setor: dadosSaida.novoSetor.toLowerCase().trim(),
+                        patrimonio: patrimonioFinal,
+                        quantidade: isSP ? qtdSolicitada : qtdAtual,
+                        ultimaMovimentacao: serverTimestamp()
+                    });
+                }
+
+                // REGISTRO NA COLEÇÃO DE MOVIMENTAÇÕES
+                const logsRef = collection(db, "saidaEquipamento");
+                transaction.set(doc(logsRef), {
+                    ativoId: itemSelecionado.id,
+                    patrimonio: patrimonioFinal,
+                    nomeEquipamento: itemSelecionado.nome,
+                    unidadeOrigem: itemSelecionado.unidade,
+                    setorOrigem: itemSelecionado.setor,
+                    unidadeDestino: dadosSaida.novaUnidade,
+                    setorDestino: dadosSaida.novoSetor,
+                    quantidadeRetirada: qtdSolicitada,
+                    responsavelRecebimento: dadosSaida.responsavelRecebimento,
+                    motivo: dadosSaida.motivo,
+                    dataSaida: serverTimestamp()
+                });
             });
 
-            await addDoc(collection(db, "saidaEquipamento"), {
-                ativoId: itemSelecionado.id,
-                patrimonio: patrimonioFinal,
-                nomeEquipamento: itemSelecionado.nome,
-                unidadeOrigem: itemSelecionado.unidade,
-                setorOrigem: itemSelecionado.setor,
-                unidadeDestino: dadosSaida.novaUnidade,
-                setorDestino: dadosSaida.novoSetor,
-                responsavelRecebimento: dadosSaida.responsavelRecebimento,
-                motivo: dadosSaida.motivo,
-                dataSaida: serverTimestamp()
-            });
-
-            toast.success("Transferência realizada com sucesso!");
+            toast.success("Movimentação e Inventário atualizados!");
             fecharModal();
             carregarEstoquePatrimonio();
         } catch (error) {
             console.error(error);
-            toast.error("Erro ao processar saída.");
+            toast.error(error.message || "Erro ao processar saída.");
         } finally {
             setLoading(false);
         }
@@ -96,7 +142,13 @@ const Estoque = () => {
     const fecharModal = () => {
         setItemSelecionado(null);
         setNovoPatrimonioParaSP('');
-        setDadosSaida({ ...dadosSaida, novaUnidade: '', novoSetor: '', responsavelRecebimento: '' });
+        setQuantidadeParaRetirar(1);
+        setDadosSaida({
+            novaUnidade: '',
+            novoSetor: '',
+            responsavelRecebimento: '',
+            motivo: 'Transferência'
+        });
     };
 
     return (
@@ -104,19 +156,19 @@ const Estoque = () => {
             <header className="estoque-header">
                 <div className="header-info">
                     <h1>🏬 Sala do Patrimônio</h1>
-                    <p>Itens aguardando distribuição ou manutenção</p>
+                    <p>Gerenciamento de Ativos e Distribuição</p>
                 </div>
                 <div className="header-actions">
-                    <button onClick={carregarEstoquePatrimonio} className="btn-atualizar">
-                        🔄 Atualizar Grade
+                    <button onClick={carregarEstoquePatrimonio} className="btn-atualizar" disabled={loading}>
+                        {loading ? '...' : '🔄 Atualizar'}
                     </button>
-                    <Link to="/" className="back-link">Voltar ao Início</Link>
+                    <Link to="/" className="back-link">Voltar</Link>
                 </div>
             </header>
 
             <div className="tabela-container">
                 {loading && !itemSelecionado ? (
-                    <div className="loading-state">Carregando estoque...</div>
+                    <div className="loading-state">Carregando itens...</div>
                 ) : (
                     <table>
                         <thead>
@@ -133,12 +185,8 @@ const Estoque = () => {
                                 <tr key={item.id} className="linha-estoque" onClick={() => setItemSelecionado(item)}>
                                     <td><strong>{item.nome}</strong></td>
                                     <td><code className="patrimonio-tag">{item.patrimonio || 'S/P'}</code></td>
-                                    <td>
-                                        <span className={`status-badge ${item.estado?.toLowerCase()}`}>
-                                            {item.estado}
-                                        </span>
-                                    </td>
-                                    <td>{item.quantidade}</td>
+                                    <td><span className={`status-badge ${item.estado?.toLowerCase()}`}>{item.estado}</span></td>
+                                    <td>{item.quantidade || 1}</td>
                                     <td className="td-obs">{item.observacoes}</td>
                                 </tr>
                             ))}
@@ -151,68 +199,63 @@ const Estoque = () => {
                 <div className="estoque-modal-overlay">
                     <div className="estoque-modal-content">
                         <h2>📦 Movimentar Equipamento</h2>
-
                         <div className="item-details-card">
-                            <p>Equipamento: <strong>{itemSelecionado.nome}</strong></p>
-                            <p>Origem: <span>{itemSelecionado.unidade}</span></p>
+                            <p>Item: <strong>{itemSelecionado.nome}</strong></p>
+                            <p>Disponível: <strong>{itemSelecionado.quantidade || 1}</strong></p>
                         </div>
 
                         <form onSubmit={handleSaida}>
                             {itemSelecionado.patrimonio?.toUpperCase() === 'S/P' && (
                                 <div className="alerta-sp-form">
-                                    <label>Este item não tem patrimônio. Identifique-o agora:</label>
-                                    <input
-                                        type="text"
-                                        className="input-patrimonio-novo"
-                                        placeholder="N° Patrimônio"
-                                        value={novoPatrimonioParaSP}
-                                        onChange={(e) => setNovoPatrimonioParaSP(e.target.value)}
-                                        required
-                                    />
+                                    <div className="estoque-form-group">
+                                        <label>Novo Patrimônio (Obrigatório):</label>
+                                        <input
+                                            type="text"
+                                            className="input-patrimonio-novo"
+                                            value={novoPatrimonioParaSP}
+                                            onChange={(e) => setNovoPatrimonioParaSP(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    {Number(itemSelecionado.quantidade) > 1 && (
+                                        <div className="estoque-form-group">
+                                            <label>Quantidade a retirar:</label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max={itemSelecionado.quantidade}
+                                                value={quantidadeParaRetirar}
+                                                onChange={(e) => setQuantidadeParaRetirar(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
                             <div className="estoque-form-group">
                                 <label>Unidade de Destino</label>
-                                <select
-                                    required
-                                    value={dadosSaida.novaUnidade}
-                                    onChange={(e) => setDadosSaida({ ...dadosSaida, novaUnidade: e.target.value })}
-                                >
-                                    <option value="">Selecione a unidade...</option>
+                                <select required value={dadosSaida.novaUnidade} onChange={(e) => setDadosSaida({ ...dadosSaida, novaUnidade: e.target.value })}>
+                                    <option value="">Selecione...</option>
                                     {unidades.map(u => <option key={u} value={u}>{u}</option>)}
                                 </select>
                             </div>
 
                             <div className="estoque-form-group">
                                 <label>Setor de Destino</label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="Ex: Sala de Raio-X"
-                                    value={dadosSaida.novoSetor}
-                                    onChange={(e) => setDadosSaida({ ...dadosSaida, novoSetor: e.target.value })}
-                                />
+                                <input type="text" required placeholder="Ex: Farmácia" value={dadosSaida.novoSetor} onChange={(e) => setDadosSaida({ ...dadosSaida, novoSetor: e.target.value })} />
                             </div>
 
                             <div className="estoque-form-group">
-                                <label>Responsável pelo Recebimento</label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="Nome de quem recebeu"
-                                    value={dadosSaida.responsavelRecebimento}
-                                    onChange={(e) => setDadosSaida({ ...dadosSaida, responsavelRecebimento: e.target.value })}
-                                />
+                                <label>Responsável</label>
+                                <input type="text" required value={dadosSaida.responsavelRecebimento} onChange={(e) => setDadosSaida({ ...dadosSaida, responsavelRecebimento: e.target.value })} />
                             </div>
 
                             <div className="modal-actions-container">
                                 <button type="submit" className="btn-confirmar-transferencia" disabled={loading}>
                                     {loading ? 'Processando...' : 'Confirmar Saída'}
                                 </button>
-                                <button type="button" className="btn-modal-cancelar" onClick={fecharModal}>
-                                    Cancelar
-                                </button>
+                                <button type="button" className="btn-modal-cancelar" onClick={fecharModal}>Cancelar</button>
                             </div>
                         </form>
                     </div>
