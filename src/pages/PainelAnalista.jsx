@@ -24,7 +24,9 @@ const PainelAnalista = () => {
     const [parecerTecnico, setParecerTecnico] = useState("");
     const [patrimonio, setPatrimonio] = useState("");
 
-    // Função para formatar Timestamps do Firebase
+    // URL do seu Google Script (Atualizada para processar via POST)
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyGgcYmM7oXjpx0li898F2RCy5M4a6os5Ti9s9t5J6h9BbgO0W8PpOfrQ3TxqIOCNNVpg/exec";
+
     const formatarDataHora = (timestamp) => {
         if (!timestamp) return "---";
         const date = timestamp.toDate();
@@ -58,16 +60,24 @@ const PainelAnalista = () => {
         buscarTodosChamados();
     }, []);
 
+    // FUNÇÃO DE EXPORTAÇÃO SINCRONIZADA COM OS CABEÇALHOS DA PLANILHA
     const handleExportarELimpar = async () => {
         try {
-            if (chamados.length === 0) {
-                toast.warning("Não há chamados para exportar.");
+            const chamadosFechados = chamados.filter(c => c.status === 'fechado');
+
+            if (chamadosFechados.length === 0) {
+                toast.warning("Não há chamados FECHADOS para exportar.");
+                setAguardandoConfirmacao(false);
                 return;
             }
 
-            const dadosExcel = chamados.map(c => ({
+            toast.info("Enviando dados para a planilha...");
+
+            // Mapeamento seguindo EXATAMENTE a ordem das colunas da imagem:
+            // OS, Data, Solicitante, Unidade, Descricao, Status, Patrimonio, Parecer_Tecnico, Finalizado_Por, Finalizado_Em
+            const dadosExportacao = chamadosFechados.map(c => ({
                 OS: c.numeroOs,
-                Data_Abertura: c.criadoEm?.toDate().toLocaleString('pt-BR'),
+                Data: c.criadoEm?.toDate().toLocaleString('pt-BR'),
                 Solicitante: c.nome,
                 Unidade: c.unidade,
                 Descricao: c.descricao,
@@ -78,23 +88,37 @@ const PainelAnalista = () => {
                 Finalizado_Em: c.finalizadoEm?.toDate().toLocaleString('pt-BR') || ""
             }));
 
-            const ws = XLSX.utils.json_to_sheet(dadosExcel);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Chamados");
-            XLSX.writeFile(wb, `Relatorio_Chamados_${new Date().toLocaleDateString()}.xlsx`);
-
-            const batch = writeBatch(db);
-            chamados.forEach((c) => {
-                const docRef = doc(db, "chamados", c.id);
-                batch.delete(docRef);
+            // 1. Enviar para o Google Sheets
+            await fetch(WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors', // Importante para Google Scripts
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tipo: "CHAMADOS_POWERBI",
+                    dados: dadosExportacao
+                })
             });
 
+            // 2. Gerar o Excel de segurança
+            const ws = XLSX.utils.json_to_sheet(dadosExportacao);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Chamados");
+            XLSX.writeFile(wb, `Relatorio_Chamados_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`);
+
+            // 3. Limpar do Firebase
+            const batch = writeBatch(db);
+            chamadosFechados.forEach((c) => {
+                batch.delete(doc(db, "chamados", c.id));
+            });
             await batch.commit();
-            toast.success("Dados exportados e base limpa!");
-            setChamados([]);
+
+            toast.success("Sincronização concluída e base limpa!");
+            buscarTodosChamados();
             setAguardandoConfirmacao(false);
+
         } catch (error) {
-            toast.error("Erro ao processar limpeza.");
+            console.error(error);
+            toast.error("Erro na exportação.");
         }
     };
 
@@ -149,13 +173,13 @@ const PainelAnalista = () => {
                     <div style={{ display: 'flex', gap: '10px' }}>
                         {!aguardandoConfirmacao ? (
                             <button onClick={() => setAguardandoConfirmacao(true)} className="btn-action-remove" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <FiDownload /> Exportar e Zerar Base
+                                <FiDownload /> Exportar e Limpar Fechados
                             </button>
                         ) : (
                             <div className="confirm-action-box" style={{ background: '#fee2e2', padding: '10px', borderRadius: '8px', border: '1px solid #ef4444' }}>
-                                <small style={{ color: '#991b1b', fontWeight: 'bold' }}>Deseja baixar o Excel e APAGAR tudo?</small>
+                                <small style={{ color: '#991b1b', fontWeight: 'bold' }}>Exportar e APAGAR os fechados?</small>
                                 <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
-                                    <button onClick={handleExportarELimpar} className="btn-sim" style={{ background: '#ef4444', color: 'white', border: 'none', padding: '5px 15px', borderRadius: '4px', cursor: 'pointer' }}>Sim, Limpar</button>
+                                    <button onClick={handleExportarELimpar} className="btn-sim" style={{ background: '#ef4444', color: 'white', border: 'none', padding: '5px 15px', borderRadius: '4px', cursor: 'pointer' }}>Sim, Confirmar</button>
                                     <button onClick={() => setAguardandoConfirmacao(false)} className="btn-nao" style={{ background: '#64748b', color: 'white', border: 'none', padding: '5px 15px', borderRadius: '4px', cursor: 'pointer' }}>Não</button>
                                 </div>
                             </div>
@@ -164,7 +188,7 @@ const PainelAnalista = () => {
                 )}
             </header>
 
-            {/* MODAIS (FINALIZAÇÃO E DETALHES) PERMANECEM IGUAIS */}
+            {/* MODAL FINALIZAR */}
             {mostrarModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
@@ -194,39 +218,35 @@ const PainelAnalista = () => {
                 </div>
             )}
 
+            {/* MODAL DETALHES */}
             {mostrarDetalhes && (
                 <div className="modal-overlay">
-                    <div className="modal-content" style={{ borderTop: '8px solid #10b981' }}>
+                    <div className="modal-content" style={{ borderTop: '8px solid #ef4444' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                             <h2>Detalhes da OS #{chamadoSelecionado?.numeroOs}</h2>
                             <button onClick={() => setMostrarDetalhes(false)} className="btn-close-modal"><FiX /></button>
                         </div>
-
                         <div className="detalhes-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
                             <p><strong>Solicitante:</strong> {chamadoSelecionado?.nome}</p>
                             <p><strong>Unidade:</strong> {chamadoSelecionado?.unidade}</p>
-                            <p><strong>Status:</strong> <span style={{ color: '#10b981', fontWeight: 'bold' }}>{chamadoSelecionado?.status}</span></p>
+                            <p><strong>Status:</strong> <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{chamadoSelecionado?.status.toUpperCase()}</span></p>
                             <p><strong>Patrimônio:</strong> {chamadoSelecionado?.patrimonio}</p>
                         </div>
-
                         <div style={{ marginBottom: '15px' }}>
                             <label style={{ fontWeight: 'bold', display: 'block', color: '#64748b' }}>Descrição do Problema:</label>
                             <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '5px', marginTop: '5px', border: '1px solid #e2e8f0' }}>
                                 {chamadoSelecionado?.descricao}
                             </div>
                         </div>
-
                         <div style={{ marginBottom: '15px' }}>
-                            <label style={{ fontWeight: 'bold', display: 'block', color: '#059669' }}>Parecer Técnico (Solução):</label>
-                            <div style={{ background: '#ecfdf5', padding: '10px', borderRadius: '5px', marginTop: '5px', border: '1px solid #a7f3d0' }}>
+                            <label style={{ fontWeight: 'bold', display: 'block', color: '#b91c1c' }}>Parecer Técnico (Solução):</label>
+                            <div style={{ background: '#fef2f2', padding: '10px', borderRadius: '5px', marginTop: '5px', border: '1px solid #fecaca' }}>
                                 {chamadoSelecionado?.feedbackAnalista || "Nenhum parecer registrado."}
                             </div>
                         </div>
-
                         <div style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'right' }}>
                             Finalizado por {chamadoSelecionado?.tecnicoResponsavel} em {formatarDataHora(chamadoSelecionado?.finalizadoEm)}
                         </div>
-
                         <button onClick={() => setMostrarDetalhes(false)} className="btn-cancelar" style={{ width: '100%', marginTop: '20px' }}>Fechar Visualização</button>
                     </div>
                 </div>
@@ -238,7 +258,7 @@ const PainelAnalista = () => {
                         <thead>
                             <tr>
                                 <th>OS</th>
-                                <th>Aberto em</th> {/* COLUNA ADICIONADA */}
+                                <th>Aberto em</th>
                                 <th>Solicitante</th>
                                 <th>Unidade</th>
                                 <th>Descrição</th>
@@ -250,7 +270,6 @@ const PainelAnalista = () => {
                             {chamados.map((item) => (
                                 <tr key={item.id}>
                                     <td>#{item.numeroOs}</td>
-                                    {/* CÉLULA DE DATA ADICIONADA */}
                                     <td style={{ fontSize: '0.85rem', color: '#64748b' }}>
                                         {formatarDataHora(item.criadoEm)}
                                     </td>
@@ -258,8 +277,19 @@ const PainelAnalista = () => {
                                     <td>{item.unidade}</td>
                                     <td style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.descricao}</td>
                                     <td>
-                                        <span className={`badge-role ${item.status === 'aberto' ? 'user' : 'analista'}`} style={{ background: item.status === 'aberto' ? '#fee2e2' : '#dcfce7', color: item.status === 'aberto' ? '#991b1b' : '#166534' }}>
-                                            {item.status}
+                                        {/* CORES: VERDE PARA ABERTO, VERMELHO PARA FECHADO */}
+                                        <span style={{
+                                            background: item.status === 'aberto' ? '#dcfce7' : '#fee2e2',
+                                            color: item.status === 'aberto' ? '#166534' : '#991b1b',
+                                            padding: '4px 10px',
+                                            borderRadius: '6px',
+                                            fontWeight: 'bold',
+                                            fontSize: '0.85rem',
+                                            display: 'inline-block',
+                                            textAlign: 'center',
+                                            minWidth: '80px'
+                                        }}>
+                                            {item.status.toUpperCase()}
                                         </span>
                                     </td>
                                     <td>
