@@ -28,7 +28,8 @@ import Estoque from './pages/Estoque';
 import Suporte from './pages/Suporte';
 import Termos from './pages/Termos';
 import TrocarSenha from './pages/TrocarSenha';
-import DashboardBI from './pages/DashboardBI'; // ✅ NOVA IMPORTAÇÃO DO BI
+import DashboardBI from './pages/DashboardBI';
+import ImprimirOS from './components/ImprimirOS'; // ✅ NOVA IMPORTAÇÃO PARA IMPRESSÃO
 
 const AppContent = () => {
   const { user, loading } = useAuth();
@@ -124,6 +125,13 @@ const AppContent = () => {
           <Route path="/dashboard-bi" element={
             <ProtectedRoute roleRequired="analista">
               <DashboardBI />
+            </ProtectedRoute>
+          } />
+
+          {/* ✅ NOVA ROTA DE IMPRESSÃO - CORRIGE O ERRO 404 */}
+          <Route path="/imprimir-os/:id" element={
+            <ProtectedRoute>
+              <ImprimirOS />
             </ProtectedRoute>
           } />
 

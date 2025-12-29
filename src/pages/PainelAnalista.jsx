@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { db, auth } from '../api/firebase';
 import { collection, query, getDocs, doc, updateDoc, serverTimestamp, orderBy, writeBatch } from 'firebase/firestore';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-toastify';
-import { FiX, FiClipboard, FiDownload, FiEye } from 'react-icons/fi';
+import { FiX, FiClipboard, FiDownload, FiEye, FiPrinter, FiSearch } from 'react-icons/fi';
 import '../styles/MeusChamados.css';
 
 const PainelAnalista = () => {
     const { userData } = useAuth();
+    const navigate = useNavigate();
     const [chamados, setChamados] = useState([]);
     const [loading, setLoading] = useState(true);
     const [aguardandoConfirmacao, setAguardandoConfirmacao] = useState(false);
@@ -17,25 +18,23 @@ const PainelAnalista = () => {
     // Modais
     const [mostrarModal, setMostrarModal] = useState(false);
     const [mostrarDetalhes, setMostrarDetalhes] = useState(false);
+    const [mostrarBuscaImpressao, setMostrarBuscaImpressao] = useState(false);
 
     const [chamadoParaFinalizar, setChamadoParaFinalizar] = useState(null);
     const [chamadoSelecionado, setChamadoSelecionado] = useState(null);
+    const [numeroOsBusca, setNumeroOsBusca] = useState("");
 
     const [parecerTecnico, setParecerTecnico] = useState("");
     const [patrimonio, setPatrimonio] = useState("");
 
-    // URL do seu Google Script (Atualizada para processar via POST)
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyGgcYmM7oXjpx0li898F2RCy5M4a6os5Ti9s9t5J6h9BbgO0W8PpOfrQ3TxqIOCNNVpg/exec";
 
     const formatarDataHora = (timestamp) => {
         if (!timestamp) return "---";
         const date = timestamp.toDate();
         return date.toLocaleString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
         });
     };
 
@@ -60,21 +59,40 @@ const PainelAnalista = () => {
         buscarTodosChamados();
     }, []);
 
-    // FUNÇÃO DE EXPORTAÇÃO SINCRONIZADA COM OS CABEÇALHOS DA PLANILHA
+    // FUNÇÃO DE BUSCA REVISADA
+    const handleBuscarEImprimir = (e) => {
+        e.preventDefault();
+
+        // 1. Normaliza o que o usuário digitou (remove # e espaços)
+        const termoBusca = numeroOsBusca.replace('#', '').trim();
+
+        // 2. Procura na lista que veio do Firebase
+        const encontrado = chamados.find(c => {
+            // Normaliza o numeroOs do banco para comparação
+            const osNoBanco = String(c.numeroOs).replace('#', '').trim();
+            return osNoBanco === termoBusca;
+        });
+
+        if (encontrado) {
+            setMostrarBuscaImpressao(false);
+            setNumeroOsBusca("");
+            // 3. Navega usando o ID do documento do Firebase
+            // Certifique-se que sua rota no App.js é exatamente /imprimir-os/:id
+            navigate(`/imprimir-os/${encontrado.id}`);
+        } else {
+            toast.error(`A OS #${termoBusca} não foi encontrada na lista. Verifique se ela já não foi exportada/apagada.`);
+        }
+    };
+
     const handleExportarELimpar = async () => {
         try {
             const chamadosFechados = chamados.filter(c => c.status === 'fechado');
-
             if (chamadosFechados.length === 0) {
                 toast.warning("Não há chamados FECHADOS para exportar.");
                 setAguardandoConfirmacao(false);
                 return;
             }
 
-            toast.info("Enviando dados para a planilha...");
-
-            // Mapeamento seguindo EXATAMENTE a ordem das colunas da imagem:
-            // OS, Data, Solicitante, Unidade, Descricao, Status, Patrimonio, Parecer_Tecnico, Finalizado_Por, Finalizado_Em
             const dadosExportacao = chamadosFechados.map(c => ({
                 OS: c.numeroOs,
                 Data: c.criadoEm?.toDate().toLocaleString('pt-BR'),
@@ -88,36 +106,26 @@ const PainelAnalista = () => {
                 Finalizado_Em: c.finalizadoEm?.toDate().toLocaleString('pt-BR') || ""
             }));
 
-            // 1. Enviar para o Google Sheets
             await fetch(WEB_APP_URL, {
                 method: 'POST',
-                mode: 'no-cors', // Importante para Google Scripts
+                mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    tipo: "CHAMADOS_POWERBI",
-                    dados: dadosExportacao
-                })
+                body: JSON.stringify({ tipo: "CHAMADOS_POWERBI", dados: dadosExportacao })
             });
 
-            // 2. Gerar o Excel de segurança
             const ws = XLSX.utils.json_to_sheet(dadosExportacao);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Chamados");
             XLSX.writeFile(wb, `Relatorio_Chamados_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`);
 
-            // 3. Limpar do Firebase
             const batch = writeBatch(db);
-            chamadosFechados.forEach((c) => {
-                batch.delete(doc(db, "chamados", c.id));
-            });
+            chamadosFechados.forEach((c) => { batch.delete(doc(db, "chamados", c.id)); });
             await batch.commit();
 
-            toast.success("Sincronização concluída e base limpa!");
+            toast.success("Sincronização concluída!");
             buscarTodosChamados();
             setAguardandoConfirmacao(false);
-
         } catch (error) {
-            console.error(error);
             toast.error("Erro na exportação.");
         }
     };
@@ -138,11 +146,9 @@ const PainelAnalista = () => {
             toast.warning("Preencha todos os campos.");
             return;
         }
-
         try {
             const analistaLogado = auth.currentUser;
             const chamadoRef = doc(db, "chamados", chamadoParaFinalizar.id);
-
             await updateDoc(chamadoRef, {
                 status: 'fechado',
                 feedbackAnalista: parecerTecnico,
@@ -150,7 +156,6 @@ const PainelAnalista = () => {
                 tecnicoResponsavel: analistaLogado.displayName || userData?.name || "Analista",
                 finalizadoEm: serverTimestamp()
             });
-
             toast.success("Chamado finalizado!");
             setMostrarModal(false);
             setParecerTecnico("");
@@ -169,36 +174,70 @@ const PainelAnalista = () => {
                     <Link to="/" className="back-link">← Voltar</Link>
                 </div>
 
-                {userData?.role === 'adm' && (
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                        {!aguardandoConfirmacao ? (
-                            <button onClick={() => setAguardandoConfirmacao(true)} className="btn-action-remove" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <FiDownload /> Exportar e Limpar Fechados
-                            </button>
-                        ) : (
-                            <div className="confirm-action-box" style={{ background: '#fee2e2', padding: '10px', borderRadius: '8px', border: '1px solid #ef4444' }}>
-                                <small style={{ color: '#991b1b', fontWeight: 'bold' }}>Exportar e APAGAR os fechados?</small>
-                                <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
-                                    <button onClick={handleExportarELimpar} className="btn-sim" style={{ background: '#ef4444', color: 'white', border: 'none', padding: '5px 15px', borderRadius: '4px', cursor: 'pointer' }}>Sim, Confirmar</button>
-                                    <button onClick={() => setAguardandoConfirmacao(false)} className="btn-nao" style={{ background: '#64748b', color: 'white', border: 'none', padding: '5px 15px', borderRadius: '4px', cursor: 'pointer' }}>Não</button>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <button
+                        onClick={() => setMostrarBuscaImpressao(true)}
+                        className="btn-print-top"
+                        style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '10px 15px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}
+                    >
+                        <FiPrinter /> Imprimir OS
+                    </button>
+
+                    {userData?.role === 'adm' && (
+                        <>
+                            {!aguardandoConfirmacao ? (
+                                <button onClick={() => setAguardandoConfirmacao(true)} className="btn-action-remove" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <FiDownload /> Exportar e Limpar
+                                </button>
+                            ) : (
+                                <div className="confirm-action-box" style={{ background: '#fee2e2', padding: '10px', borderRadius: '8px', border: '1px solid #ef4444' }}>
+                                    <small style={{ color: '#991b1b', fontWeight: 'bold' }}>Confirmar exclusão?</small>
+                                    <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+                                        <button onClick={handleExportarELimpar} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px' }}>Sim</button>
+                                        <button onClick={() => setAguardandoConfirmacao(false)} style={{ background: '#64748b', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px' }}>Não</button>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                    </div>
-                )}
+                            )}
+                        </>
+                    )}
+                </div>
             </header>
 
-            {/* MODAL FINALIZAR */}
+            {mostrarBuscaImpressao && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '400px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                            <h2>Imprimir Relatório</h2>
+                            <button onClick={() => setMostrarBuscaImpressao(false)} className="btn-close-modal"><FiX /></button>
+                        </div>
+                        <form onSubmit={handleBuscarEImprimir}>
+                            <div className="input-group">
+                                <label>Número da OS (Ex: 2025-9218)</label>
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    value={numeroOsBusca}
+                                    onChange={(e) => setNumeroOsBusca(e.target.value)}
+                                    placeholder="Digite a OS aqui..."
+                                    required
+                                    autoFocus
+                                />
+                            </div>
+                            <button type="submit" className="btn-salvar-modern" style={{ width: '100%', marginTop: '15px', display: 'flex', justifyContent: 'center', gap: '10px' }}>
+                                <FiSearch /> Buscar e Imprimir
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAIS DE FINALIZAR E DETALHES ABAIXO... */}
             {mostrarModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                             <h2>Encerrar Chamado #{chamadoParaFinalizar?.numeroOs}</h2>
                             <button onClick={() => setMostrarModal(false)} className="btn-close-modal"><FiX /></button>
-                        </div>
-                        <div style={{ background: '#f1f5f9', padding: '15px', borderRadius: '8px', borderLeft: '5px solid #3b82f6', marginBottom: '20px' }}>
-                            <strong style={{ color: '#1e293b', fontSize: '0.9rem', display: 'block', marginBottom: '5px' }}>📝 Reclamação do Usuário:</strong>
-                            <p style={{ margin: 0, color: '#475569', fontSize: '0.95rem', whiteSpace: 'pre-wrap' }}>{chamadoParaFinalizar?.descricao}</p>
                         </div>
                         <form onSubmit={handleFinalizarChamado}>
                             <div className="input-group" style={{ marginBottom: '15px' }}>
@@ -218,7 +257,6 @@ const PainelAnalista = () => {
                 </div>
             )}
 
-            {/* MODAL DETALHES */}
             {mostrarDetalhes && (
                 <div className="modal-overlay">
                     <div className="modal-content" style={{ borderTop: '8px solid #ef4444' }}>
@@ -231,21 +269,6 @@ const PainelAnalista = () => {
                             <p><strong>Unidade:</strong> {chamadoSelecionado?.unidade}</p>
                             <p><strong>Status:</strong> <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{chamadoSelecionado?.status.toUpperCase()}</span></p>
                             <p><strong>Patrimônio:</strong> {chamadoSelecionado?.patrimonio}</p>
-                        </div>
-                        <div style={{ marginBottom: '15px' }}>
-                            <label style={{ fontWeight: 'bold', display: 'block', color: '#64748b' }}>Descrição do Problema:</label>
-                            <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '5px', marginTop: '5px', border: '1px solid #e2e8f0' }}>
-                                {chamadoSelecionado?.descricao}
-                            </div>
-                        </div>
-                        <div style={{ marginBottom: '15px' }}>
-                            <label style={{ fontWeight: 'bold', display: 'block', color: '#b91c1c' }}>Parecer Técnico (Solução):</label>
-                            <div style={{ background: '#fef2f2', padding: '10px', borderRadius: '5px', marginTop: '5px', border: '1px solid #fecaca' }}>
-                                {chamadoSelecionado?.feedbackAnalista || "Nenhum parecer registrado."}
-                            </div>
-                        </div>
-                        <div style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'right' }}>
-                            Finalizado por {chamadoSelecionado?.tecnicoResponsavel} em {formatarDataHora(chamadoSelecionado?.finalizadoEm)}
                         </div>
                         <button onClick={() => setMostrarDetalhes(false)} className="btn-cancelar" style={{ width: '100%', marginTop: '20px' }}>Fechar Visualização</button>
                     </div>
@@ -261,7 +284,6 @@ const PainelAnalista = () => {
                                 <th>Aberto em</th>
                                 <th>Solicitante</th>
                                 <th>Unidade</th>
-                                <th>Descrição</th>
                                 <th>Status</th>
                                 <th>Ação</th>
                             </tr>
@@ -270,24 +292,14 @@ const PainelAnalista = () => {
                             {chamados.map((item) => (
                                 <tr key={item.id}>
                                     <td>#{item.numeroOs}</td>
-                                    <td style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                                        {formatarDataHora(item.criadoEm)}
-                                    </td>
+                                    <td>{formatarDataHora(item.criadoEm)}</td>
                                     <td>{item.nome}</td>
                                     <td>{item.unidade}</td>
-                                    <td style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.descricao}</td>
                                     <td>
-                                        {/* CORES: VERDE PARA ABERTO, VERMELHO PARA FECHADO */}
                                         <span style={{
                                             background: item.status === 'aberto' ? '#dcfce7' : '#fee2e2',
                                             color: item.status === 'aberto' ? '#166534' : '#991b1b',
-                                            padding: '4px 10px',
-                                            borderRadius: '6px',
-                                            fontWeight: 'bold',
-                                            fontSize: '0.85rem',
-                                            display: 'inline-block',
-                                            textAlign: 'center',
-                                            minWidth: '80px'
+                                            padding: '4px 10px', borderRadius: '6px', fontWeight: 'bold'
                                         }}>
                                             {item.status.toUpperCase()}
                                         </span>
@@ -296,9 +308,7 @@ const PainelAnalista = () => {
                                         {item.status === 'aberto' ? (
                                             <button onClick={() => abrirModalFinalizar(item)} className="btn-abrir"><FiClipboard /> Finalizar</button>
                                         ) : (
-                                            <button onClick={() => verDetalhesChamado(item)} className="btn-visualizar" style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                <FiEye /> Ver Resumo
-                                            </button>
+                                            <button onClick={() => verDetalhesChamado(item)} className="btn-visualizar"><FiEye /> Ver</button>
                                         )}
                                     </td>
                                 </tr>

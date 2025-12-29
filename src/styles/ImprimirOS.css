@@ -1,0 +1,78 @@
+.impressao-container {
+    padding: 40px;
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: white;
+    color: black;
+    font-family: 'Arial', sans-serif;
+}
+
+.impressao-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #000;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.impressao-corpo section {
+    margin-bottom: 20px;
+}
+
+.impressao-corpo h3 {
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    font-size: 1.1rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.campo {
+    margin-bottom: 8px;
+}
+
+.campo label {
+    font-weight: bold;
+    display: block;
+    font-size: 0.9rem;
+}
+
+.descricao-box {
+    border: 1px solid #ddd;
+    padding: 10px;
+    min-height: 100px;
+    margin-top: 5px;
+}
+
+.assinaturas {
+    margin-top: 50px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 50px;
+    text-align: center;
+}
+
+.assinatura-linha {
+    border-top: 1px solid #000;
+    margin-top: 40px;
+    padding-top: 5px;
+}
+
+/* COMANDO PARA OCULTAR BOTÕES NA HORA DE IMPRIMIR */
+@media print {
+    .btn-print-actions {
+        display: none !important;
+    }
+
+    .impressao-container {
+        padding: 0;
+        margin: 0;
+    }
+}
