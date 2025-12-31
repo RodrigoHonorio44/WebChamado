@@ -2,11 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { db, auth } from '../api/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
+import { FiEye, FiX } from 'react-icons/fi'; // Ícones de Olho e Fechar
 import '../styles/MeusChamados.css';
 
 const MeusChamados = () => {
     const [chamados, setChamados] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [chamadoSelecionado, setChamadoSelecionado] = useState(null); // Estado para o modal
+    const [modalAberto, setModalAberto] = useState(false);
     const user = auth.currentUser;
 
     useEffect(() => {
@@ -46,6 +49,12 @@ const MeusChamados = () => {
         buscarChamados();
     }, [user]);
 
+    // Função para abrir o modal
+    const abrirModal = (chamado) => {
+        setChamadoSelecionado(chamado);
+        setModalAberto(true);
+    };
+
     return (
         <div className="meus-chamados-container">
             <header className="page-header">
@@ -54,7 +63,9 @@ const MeusChamados = () => {
             </header>
 
             {loading ? (
-                <p className="loading-text">Carregando seus chamados...</p>
+                <div className="loading-container">
+                    <p className="loading-text">Carregando seus chamados...</p>
+                </div>
             ) : chamados.length === 0 ? (
                 <div className="no-data">
                     <p>Nenhum chamado encontrado.</p>
@@ -68,74 +79,74 @@ const MeusChamados = () => {
                                 <th>Nº OS</th>
                                 <th>Solicitante</th>
                                 <th>Unidade</th>
-                                <th>Descrição / Parecer</th>
-                                <th>Prioridade</th>
                                 <th>Status</th>
                                 <th>Data/Hora</th>
+                                <th>Visualizar</th>
                             </tr>
                         </thead>
                         <tbody>
                             {chamados.map((item) => (
-                                <tr key={item.id}>
-                                    <td className="os-cell"><strong>{item.numeroOs || 'S/N'}</strong></td>
-
-                                    <td>
+                                <tr key={item.id} className="linha-clicavel">
+                                    <td data-label="Nº OS" className="os-cell">
+                                        <strong>#{item.numeroOs || 'S/N'}</strong>
+                                    </td>
+                                    <td data-label="Solicitante">
                                         <div className="user-info-cell">
                                             <span className="user-name">{item.nome || 'Usuário'}</span>
                                             <span className="user-cargo-label">{item.cargo || 'Funcionário'}</span>
                                         </div>
                                     </td>
-
-                                    <td>{item.unidade}</td>
-
-                                    <td className="desc-cell">
-                                        <div className="original-desc">
-                                            <strong>Relato:</strong> {item.descricao}
-                                        </div>
-
-                                        {/* ✅ EXIBIÇÃO DO PARECER TÉCNICO E NOME DO ANALISTA */}
-                                        {item.status === 'fechado' && item.feedbackAnalista && (
-                                            <div className="analista-feedback-box" style={{ marginTop: '10px', padding: '8px', background: '#f0f9ff', borderRadius: '6px', borderLeft: '4px solid #3b82f6' }}>
-                                                <small style={{ color: '#1e40af', fontWeight: 'bold' }}>Parecer Técnico:</small>
-                                                <p style={{ margin: '5px 0', fontSize: '0.9rem', color: '#334155', whiteSpace: 'pre-wrap' }}>
-                                                    {item.feedbackAnalista}
-                                                </p>
-                                                {/* ✅ Exibe o Analista que fechou */}
-                                                <div style={{ textAlign: 'right', marginTop: '5px' }}>
-                                                    <span style={{ fontSize: '0.75rem', background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: '10px', fontWeight: '500' }}>
-                                                        Analista: {item.tecnicoResponsavel || 'Equipe de TI'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </td>
-
-                                    <td>
-                                        <span className={`prioridade-tag ${item.prioridade?.toLowerCase()}`}>
-                                            {item.prioridade}
+                                    <td data-label="Unidade">{item.unidade || 'N/A'}</td>
+                                    <td data-label="Status">
+                                        <span className={`status-badge ${item.status?.toLowerCase() || 'aberto'}`}>
+                                            {item.status || 'Pendente'}
                                         </span>
                                     </td>
-
-                                    <td>
-                                        <span className={`status-badge ${item.status?.toLowerCase()}`}>
-                                            {item.status}
-                                        </span>
+                                    <td data-label="Data/Hora" className="data-hora-cell">
+                                        {item.criadoEm ? item.criadoEm.toDate().toLocaleDateString('pt-BR') : '--/--'}
                                     </td>
-
-                                    <td className="data-hora-cell">
-                                        {item.criadoEm ? (
-                                            <>
-                                                <div>{item.criadoEm.toDate().toLocaleDateString('pt-BR')}</div>
-                                                <div className="hora-text">
-                                                    {item.criadoEm.toDate().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                                </div>
-                                            </>
-                                        ) : '--/--'}
+                                    <td data-label="Ação">
+                                        <button className="btn-view-chamado" onClick={() => abrirModal(item)}>
+                                            <FiEye />
+                                        </button>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {/* MODAL DE DETALHES DO CHAMADO */}
+            {modalAberto && chamadoSelecionado && (
+                <div className="modal-overlay" onClick={() => setModalAberto(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Chamado #{chamadoSelecionado.numeroOs}</h2>
+                            <button className="close-btn" onClick={() => setModalAberto(false)}>
+                                <FiX />
+                            </button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="info-grid-user">
+                                <div className="info-item"><strong>Status:</strong> {chamadoSelecionado.status}</div>
+                                <div className="info-item"><strong>Prioridade:</strong> {chamadoSelecionado.prioridade}</div>
+                                <div className="info-item"><strong>Técnico:</strong> {chamadoSelecionado.tecnicoResponsavel || 'Aguardando Analista'}</div>
+                            </div>
+                            
+                            <div className="detalhe-box">
+                                <h3>Descrição Original:</h3>
+                                <p>{chamadoSelecionado.descricao}</p>
+                            </div>
+
+                            {chamadoSelecionado.feedbackAnalista && (
+                                <div className="detalhe-box feedback">
+                                    <h3>Parecer do Técnico:</h3>
+                                    <p>{chamadoSelecionado.feedbackAnalista}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

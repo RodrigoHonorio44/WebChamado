@@ -1,0 +1,247 @@
+/* PainelAnalista.css */
+
+/* Variáveis de Cores */
+:root {
+    --primary: #3b82f6;
+    --primary-dark: #1e40af;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --neutral: #64748b;
+    --bg-page: #f8fafc;
+    --bg-card: #ffffff;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+}
+
+.meus-chamados-container {
+    padding: 24px;
+    background-color: var(--bg-page);
+    min-height: 100vh;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Cabeçalho */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.page-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0 0 4px 0;
+}
+
+.back-link {
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.back-link:hover {
+    color: var(--primary);
+}
+
+/* Botões de Ação Superiores */
+.btn-print-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    background: white;
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    /* Transição suave para o hover */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* HOVER DO BOTÃO DE IMPRIMIR */
+.btn-print-top:hover {
+    background-color: #f8fafc;
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.btn-print-top:active {
+    transform: translateY(0);
+}
+
+.btn-action-remove {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: #fee2e2;
+    color: var(--danger);
+    transition: filter 0.2s, transform 0.1s;
+}
+
+.btn-action-remove:hover {
+    filter: brightness(0.95);
+    transform: translateY(-1px);
+}
+
+.confirm-action-box {
+    display: flex;
+    gap: 5px;
+    background: white;
+    padding: 5px;
+    border-radius: 8px;
+    border: 1px solid var(--danger);
+}
+
+/* Tabela Moderna */
+.table-wrapper {
+    background: var(--bg-card);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.modern-table th {
+    background-color: #f1f5f9;
+    padding: 14px 18px;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.modern-table td {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+    color: #334155;
+    font-size: 0.9rem;
+}
+
+.row-hover-effect {
+    transition: background-color 0.2s;
+}
+
+.row-hover-effect:hover {
+    background-color: #f8fafc;
+}
+
+/* Badges de Status */
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.status-badge.aberto { background: #dcfce7; color: #15803d; }
+.status-badge.em\ atendimento { background: #fef3c7; color: #b45309; }
+.status-badge.pendente { background: #fee2e2; color: #b91c1c; }
+.status-badge.fechado { background: #f1f5f9; color: #475569; }
+
+/* Botões na Linha da Tabela */
+.btn-assumir { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+.btn-pausar { background: var(--neutral); color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; display: flex; }
+.btn-finalizar-small { background: var(--success); color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; display: flex; }
+.btn-retomar { background: var(--warning); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-size: 0.85rem; }
+
+/* Modais */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    width: 95%;
+    max-width: 600px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Alerta de Pausa dentro do Modal */
+.alerta-pausa {
+    background-color: #fff3cd;
+    border-left: 5px solid #ffc107;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    color: #856404;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Grid de Informações */
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.descricao-box-full {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid var(--primary);
+    margin: 15px 0;
+    color: var(--text-main);
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.modal-footer-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+/* Botões do Modal */
+.btn-voltar { background: #f1f5f9; color: var(--text-muted); border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+.btn-salvar-modern { background: var(--text-main); color: white; border: none; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+.btn-finalizar-detalhe { background: var(--success); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .info-grid { grid-template-columns: 1fr; }
+    .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+}
