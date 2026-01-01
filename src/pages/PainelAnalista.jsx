@@ -22,9 +22,11 @@ import {
   FiPlayCircle,
   FiCheck,
   FiSearch,
-  FiArrowLeftCircle, // Novo ícone para devolver
+  FiArrowLeftCircle,
 } from "react-icons/fi";
 import "../styles/PainelAnalista.css";
+
+import logoMarca from "../assets/logoo1.png";
 
 const PainelAnalista = () => {
   const { userData } = useAuth();
@@ -69,6 +71,14 @@ const PainelAnalista = () => {
     return () => unsubscribe();
   }, []);
 
+  const stats = {
+    total: chamados.length,
+    abertos: chamados.filter((c) => c.status === "aberto").length,
+    atendimento: chamados.filter((c) => c.status === "em atendimento").length,
+    pendentes: chamados.filter((c) => c.status === "pendente").length,
+    fechados: chamados.filter((c) => c.status === "fechado").length,
+  };
+
   const formatarDataHora = (timestamp) => {
     if (!timestamp) return "---";
     const date = timestamp.toDate();
@@ -103,12 +113,10 @@ const PainelAnalista = () => {
     }
   };
 
-  // --- TRAVA DE SEGURANÇA ---
   const podeAlterarChamado = (chamado) => {
     if (ehAdmin) return true;
     if (!chamado.tecnicoResponsavel) return true;
     if (chamado.tecnicoResponsavel === analistaNome) return true;
-
     toast.error(
       `Acesso negado! Este chamado pertence a: ${chamado.tecnicoResponsavel}`
     );
@@ -126,62 +134,45 @@ const PainelAnalista = () => {
       );
       return;
     }
-
     try {
-      const chamadoRef = doc(db, "chamados", chamado.id);
-      await updateDoc(chamadoRef, {
+      await updateDoc(doc(db, "chamados", chamado.id), {
         status: "em atendimento",
         tecnicoResponsavel: analistaNome,
         iniciadoEm: serverTimestamp(),
       });
       toast.info("Você assumiu o atendimento.");
       setMostrarDetalhes(false);
-    } catch (error) {
+    } catch {
       toast.error("Erro ao assumir chamado.");
     }
   };
 
-  // --- NOVA FUNÇÃO: DEVOLVER CHAMADO ---
   const handleDevolverChamado = async (chamado) => {
-    // Regra: Somente o analista que está com o chamado ou o ADM podem devolver
     const ehDono = chamado.tecnicoResponsavel === analistaNome;
-
     if (!ehDono && !ehAdmin) {
-      toast.error(
-        "Somente o técnico responsável ou ADM podem devolver este chamado!"
-      );
+      toast.error("Somente o técnico responsável ou ADM podem devolver!");
       return;
     }
-
-    if (
-      window.confirm(
-        `Deseja devolver o chamado #${chamado.numeroOs} para a fila?`
-      )
-    ) {
-      try {
-        const chamadoRef = doc(db, "chamados", chamado.id);
-        await updateDoc(chamadoRef, {
-          status: "aberto",
-          tecnicoResponsavel: null,
-          iniciadoEm: null,
-          pausadoEm: null,
-          motivoPausa: null,
-        });
-        toast.success("Chamado devolvido para a fila geral.");
-        setMostrarDetalhes(false);
-      } catch (error) {
-        toast.error("Erro ao devolver chamado.");
-      }
+    try {
+      await updateDoc(doc(db, "chamados", chamado.id), {
+        status: "aberto",
+        tecnicoResponsavel: null,
+        iniciadoEm: null,
+        pausadoEm: null,
+        motivoPausa: null,
+      });
+      toast.success("Chamado devolvido para a fila.");
+      setMostrarDetalhes(false);
+    } catch {
+      toast.error("Erro ao devolver.");
     }
   };
 
   const handleColocarPendente = async (e) => {
     e.preventDefault();
     if (!podeAlterarChamado(chamadoParaPendente)) return;
-
     try {
-      const chamadoRef = doc(db, "chamados", chamadoParaPendente.id);
-      await updateDoc(chamadoRef, {
+      await updateDoc(doc(db, "chamados", chamadoParaPendente.id), {
         status: "pendente",
         motivoPausa: motivoPendencia,
         pausadoEm: serverTimestamp(),
@@ -190,23 +181,21 @@ const PainelAnalista = () => {
       setMostrarModalPendencia(false);
       setMotivoPendencia("");
       setMostrarDetalhes(false);
-    } catch (error) {
-      toast.error("Erro ao pausar chamado.");
+    } catch {
+      toast.error("Erro ao pausar.");
     }
   };
 
   const handleRetomarChamado = async (chamado) => {
     if (!podeAlterarChamado(chamado)) return;
-
     try {
-      const chamadoRef = doc(db, "chamados", chamado.id);
-      await updateDoc(chamadoRef, {
+      await updateDoc(doc(db, "chamados", chamado.id), {
         status: "em atendimento",
         retomadoEm: serverTimestamp(),
       });
       toast.success("Atendimento retomado!");
       setMostrarDetalhes(false);
-    } catch (error) {
+    } catch {
       toast.error("Erro ao retomar.");
     }
   };
@@ -214,10 +203,8 @@ const PainelAnalista = () => {
   const handleFinalizarChamado = async (e) => {
     e.preventDefault();
     if (!podeAlterarChamado(chamadoParaFinalizar)) return;
-
     try {
-      const chamadoRef = doc(db, "chamados", chamadoParaFinalizar.id);
-      await updateDoc(chamadoRef, {
+      await updateDoc(doc(db, "chamados", chamadoParaFinalizar.id), {
         status: "fechado",
         feedbackAnalista: parecerTecnico,
         patrimonio: patrimonio.toUpperCase(),
@@ -228,7 +215,7 @@ const PainelAnalista = () => {
       setMostrarModal(false);
       setParecerTecnico("");
       setPatrimonio("");
-    } catch (error) {
+    } catch {
       toast.error("Erro ao finalizar.");
     }
   };
@@ -241,7 +228,6 @@ const PainelAnalista = () => {
         setAguardandoConfirmacao(false);
         return;
       }
-
       const dados = chamadosFechados.map((c) => ({
         OS: c.numeroOs,
         Solicitante: c.nome,
@@ -251,7 +237,6 @@ const PainelAnalista = () => {
         Patrimonio: c.patrimonio || "N/A",
         Analista: c.tecnicoResponsavel || "",
       }));
-
       await fetch(WEB_APP_URL, {
         method: "POST",
         mode: "no-cors",
@@ -261,26 +246,28 @@ const PainelAnalista = () => {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Chamados");
       XLSX.writeFile(wb, `Relatorio.xlsx`);
-
       const batch = writeBatch(db);
       chamadosFechados.forEach((c) => batch.delete(doc(db, "chamados", c.id)));
       await batch.commit();
       setAguardandoConfirmacao(false);
-      toast.success("Exportado e limpo com sucesso!");
-    } catch (error) {
+      toast.success("Exportado e limpo!");
+    } catch {
       toast.error("Erro na exportação.");
-      setAguardandoConfirmacao(false);
     }
   };
 
   return (
     <div className="meus-chamados-container">
       <header className="page-header">
-        <div>
-          <h1>Fila de Chamados</h1>
-          <Link to="/" className="back-link">
-            ← Voltar
-          </Link>
+        <div className="header-brand-box">
+          <img src={logoMarca} alt="Logo" className="logo-header" />
+          <div className="header-title-divider"></div>
+          <div>
+            <h1 className="header-title-text">Fila de Chamados</h1>
+            <Link to="/" className="back-link-modern">
+              <FiArrowLeftCircle /> Painel Inicial
+            </Link>
+          </div>
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           <button
@@ -289,7 +276,6 @@ const PainelAnalista = () => {
           >
             <FiPrinter /> Imprimir OS
           </button>
-
           {ehAdmin &&
             (!aguardandoConfirmacao ? (
               <button
@@ -300,7 +286,7 @@ const PainelAnalista = () => {
               </button>
             ) : (
               <div className="confirm-action-box">
-                <span>Excluir fechados?</span>
+                <span>Excluir?</span>
                 <button
                   onClick={handleExportarELimpar}
                   className="btn-confirm-yes"
@@ -318,6 +304,15 @@ const PainelAnalista = () => {
         </div>
       </header>
 
+      <div className="painel-cards-resumo">
+        {Object.entries(stats).map(([label, valor]) => (
+          <div key={label} className={`card-estatistica ${label}`}>
+            <h3>{label.charAt(0).toUpperCase() + label.slice(1)}</h3>
+            <span className="valor">{valor}</span>
+          </div>
+        ))}
+      </div>
+
       <div className="table-wrapper">
         <table className="modern-table">
           <thead>
@@ -325,125 +320,103 @@ const PainelAnalista = () => {
               <th>OS</th>
               <th>Aberto em</th>
               <th>Solicitante / Setor</th>
-              <th>Relato (Resumo)</th>
+              <th>Relato</th>
               <th>Status</th>
               <th>Ações</th>
             </tr>
           </thead>
           <tbody>
-            {loading
-              ? [...Array(5)].map((_, i) => (
-                  <tr key={i} className="skeleton-row">
-                    <td colSpan="6">
-                      <div className="skeleton-line"></div>
-                    </td>
-                  </tr>
-                ))
-              : chamados.map((item) => (
-                  <tr
-                    key={item.id}
-                    onClick={() => {
-                      setChamadoSelecionado(item);
-                      setMostrarDetalhes(true);
-                    }}
-                    className="row-hover-effect"
-                    style={{ cursor: "pointer" }}
-                  >
-                    <td>
-                      <strong>#{item.numeroOs}</strong>
-                    </td>
-                    <td>{formatarDataHora(item.criadoEm)}</td>
-                    <td>
-                      <strong>{item.nome}</strong>
-                      <br />
-                      <small
-                        style={{
-                          color: "#007bff",
-                          fontWeight: "bold",
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {item.setor || "Geral"}
-                      </small>
-                    </td>
-                    <td style={{ fontSize: "0.85rem", color: "#666" }}>
-                      {truncarTexto(item.descricao)}
-                    </td>
-                    <td>
-                      <span className={`status-badge ${item.status}`}>
-                        {item.status.toUpperCase()}
-                      </span>
-                    </td>
-                    <td onClick={(e) => e.stopPropagation()}>
-                      <div style={{ display: "flex", gap: "5px" }}>
-                        {item.status === "aberto" && (
-                          <button
-                            onClick={() => handleAssumirChamado(item)}
-                            className="btn-assumir"
-                          >
-                            Assumir
-                          </button>
-                        )}
-                        {(item.status === "em atendimento" ||
-                          item.status === "pendente") && (
-                          <>
-                            {/* Botão Devolver na Tabela (Só aparece para o dono ou ADM) */}
-                            {(item.tecnicoResponsavel === analistaNome ||
-                              ehAdmin) && (
+            {loading ? (
+              <tr>
+                <td colSpan="6">Carregando...</td>
+              </tr>
+            ) : (
+              chamados.map((item) => (
+                <tr
+                  key={item.id}
+                  onClick={() => {
+                    setChamadoSelecionado(item);
+                    setMostrarDetalhes(true);
+                  }}
+                  className="row-hover-effect"
+                >
+                  <td>
+                    <strong>#{item.numeroOs}</strong>
+                  </td>
+                  <td>{formatarDataHora(item.criadoEm)}</td>
+                  <td>
+                    <strong>{item.nome}</strong>
+                    <br />
+                    <small style={{ color: "#007bff", fontWeight: "bold" }}>
+                      {item.setor || "Geral"}
+                    </small>
+                  </td>
+                  <td>{truncarTexto(item.descricao)}</td>
+                  <td>
+                    <span className={`status-badge ${item.status}`}>
+                      {item.status.toUpperCase()}
+                    </span>
+                  </td>
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <div style={{ display: "flex", gap: "5px" }}>
+                      {item.status === "aberto" && (
+                        <button
+                          onClick={() => handleAssumirChamado(item)}
+                          className="btn-assumir"
+                        >
+                          Assumir
+                        </button>
+                      )}
+                      {(item.status === "em atendimento" ||
+                        item.status === "pendente") && (
+                        <>
+                          {(item.tecnicoResponsavel === analistaNome ||
+                            ehAdmin) && (
+                            <button
+                              onClick={() => handleDevolverChamado(item)}
+                              className="btn-devolver"
+                              title="Devolver"
+                            >
+                              <FiArrowLeftCircle />
+                            </button>
+                          )}
+                          {item.status === "em atendimento" && (
+                            <>
                               <button
-                                onClick={() => handleDevolverChamado(item)}
-                                className="btn-devolver"
-                                title="Devolver para Fila"
-                                style={{
-                                  backgroundColor: "#6c757d",
-                                  color: "white",
-                                  border: "none",
-                                  padding: "6px",
-                                  borderRadius: "4px",
+                                onClick={() => {
+                                  setChamadoParaPendente(item);
+                                  setMostrarModalPendencia(true);
                                 }}
+                                className="btn-pausar"
                               >
-                                <FiArrowLeftCircle />
+                                <FiPauseCircle />
                               </button>
-                            )}
-
-                            {item.status === "em atendimento" && (
-                              <>
-                                <button
-                                  onClick={() => {
-                                    setChamadoParaPendente(item);
-                                    setMostrarModalPendencia(true);
-                                  }}
-                                  className="btn-pausar"
-                                  title="Pausar"
-                                >
-                                  <FiPauseCircle />
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setChamadoParaFinalizar(item);
-                                    setMostrarModal(true);
-                                  }}
-                                  className="btn-finalizar-small"
-                                  title="Finalizar"
-                                >
-                                  <FiCheck />
-                                </button>
-                              </>
-                            )}
-                            {item.status === "pendente" && (
                               <button
-                                onClick={() => handleRetomarChamado(item)}
-                                className="btn-retomar"
+                                onClick={() => {
+                                  setChamadoParaFinalizar(item);
+                                  setMostrarModal(true);
+                                }}
+                                className="btn-finalizar-small"
                               >
-                                <FiPlayCircle /> Retomar
+                                <FiCheck />
                               </button>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                            </>
+                          )}
+                          {item.status === "pendente" && (
+                            <button
+                              onClick={() => handleRetomarChamado(item)}
+                              className="btn-retomar"
+                            >
+                              <FiPlayCircle /> Retomar
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -462,29 +435,28 @@ const PainelAnalista = () => {
               </button>
             </div>
             <form onSubmit={handleBuscarEImprimir}>
-              <label>Número da OS (Ex: 2025-9218)</label>
+              <label>Número da OS</label>
               <input
                 type="text"
                 className="form-input"
                 value={numeroOsBusca}
                 onChange={(e) => setNumeroOsBusca(e.target.value)}
                 required
-                placeholder="Digite a OS..."
-                autoFocus
+                placeholder="Ex: 2025-9218"
               />
               <button
                 type="submit"
                 className="btn-salvar-modern"
                 style={{ width: "100%" }}
               >
-                <FiSearch style={{ marginRight: "8px" }} /> Buscar e Abrir
+                <FiSearch /> Buscar
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL DE DETALHES */}
+      {/* MODAL DE DETALHES CORRIGIDO */}
       {mostrarDetalhes && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -498,29 +470,23 @@ const PainelAnalista = () => {
               </button>
             </div>
             <div className="detalhes-body">
+              {/* BOX DE PENDÊNCIA ESTILIZADO */}
               {chamadoSelecionado?.status === "pendente" && (
                 <div
-                  className="alerta-pausa"
                   style={{
-                    backgroundColor: "#fff3cd",
+                    background: "#fff3cd",
                     borderLeft: "5px solid #ffc107",
-                    padding: "15px",
-                    marginBottom: "20px",
+                    padding: "10px",
+                    marginBottom: "15px",
                     borderRadius: "4px",
-                    color: "#856404",
                   }}
                 >
-                  <strong style={{ display: "block", marginBottom: "5px" }}>
-                    ⚠️ MOTIVO DA PENDÊNCIA:
+                  <strong style={{ color: "#856404" }}>
+                    Motivo da Pendência:
                   </strong>
-                  <p style={{ margin: 0, fontWeight: "500" }}>
-                    {chamadoSelecionado?.motivoPausa ||
-                      "Nenhum motivo detalhado."}
+                  <p style={{ margin: "5px 0 0", fontSize: "0.9rem" }}>
+                    {chamadoSelecionado?.motivoPausa || "Não informado"}
                   </p>
-                  <small>
-                    Pausado em:{" "}
-                    {formatarDataHora(chamadoSelecionado?.pausadoEm)}
-                  </small>
                 </div>
               )}
 
@@ -533,14 +499,8 @@ const PainelAnalista = () => {
                 </p>
                 <p>
                   <strong>Setor:</strong>{" "}
-                  <span
-                    style={{
-                      textTransform: "uppercase",
-                      color: "#007bff",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {chamadoSelecionado?.setor || "Não informado"}
+                  <span className="text-blue-bold">
+                    {chamadoSelecionado?.setor || "Geral"}
                   </span>
                 </p>
                 <p>
@@ -558,14 +518,22 @@ const PainelAnalista = () => {
               </div>
               <hr />
               <h3>Descrição do Usuário</h3>
-              <div
-                className="descricao-box-full"
-                style={{ whiteSpace: "pre-wrap" }}
-              >
+              <div className="descricao-box-full">
                 {chamadoSelecionado?.descricao}
               </div>
             </div>
-            <div className="modal-footer-actions">
+
+            {/* RODAPÉ DO MODAL COM FLEXBOX PARA BOTÕES LADO A LADO */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginTop: "20px",
+                paddingTop: "15px",
+                borderTop: "1px solid #eee",
+              }}
+            >
               <button
                 onClick={() => setMostrarDetalhes(false)}
                 className="btn-voltar"
@@ -573,49 +541,51 @@ const PainelAnalista = () => {
                 Fechar
               </button>
 
-              {/* Botão Devolver dentro do Modal (Só para dono ou ADM) */}
-              {(chamadoSelecionado?.status === "em atendimento" ||
-                chamadoSelecionado?.status === "pendente") &&
-                (chamadoSelecionado?.tecnicoResponsavel === analistaNome ||
-                  ehAdmin) && (
+              <div style={{ display: "flex", gap: "10px" }}>
+                {(chamadoSelecionado?.status === "em atendimento" ||
+                  chamadoSelecionado?.status === "pendente") &&
+                  (chamadoSelecionado?.tecnicoResponsavel === analistaNome ||
+                    ehAdmin) && (
+                    <button
+                      onClick={() => handleDevolverChamado(chamadoSelecionado)}
+                      className="btn-devolver-modal"
+                      style={{
+                        background: "#6c757d",
+                        color: "white",
+                        border: "none",
+                        padding: "8px 15px",
+                        borderRadius: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "5px",
+                      }}
+                    >
+                      <FiArrowLeftCircle /> Devolver
+                    </button>
+                  )}
+                {chamadoSelecionado?.status === "pendente" && (
                   <button
-                    onClick={() => handleDevolverChamado(chamadoSelecionado)}
-                    className="btn-devolver-modal"
-                    style={{
-                      backgroundColor: "#6c757d",
-                      color: "white",
-                      border: "none",
-                      padding: "10px 15px",
-                      borderRadius: "6px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                    }}
+                    onClick={() => handleRetomarChamado(chamadoSelecionado)}
+                    className="btn-retomar"
+                    style={{ padding: "8px 15px" }}
                   >
-                    <FiArrowLeftCircle /> Devolver para Fila
+                    <FiPlayCircle /> Retomar
                   </button>
                 )}
-
-              {chamadoSelecionado?.status === "pendente" && (
-                <button
-                  onClick={() => handleRetomarChamado(chamadoSelecionado)}
-                  className="btn-retomar"
-                >
-                  <FiPlayCircle /> Retomar Agora
-                </button>
-              )}
-              {chamadoSelecionado?.status === "em atendimento" && (
-                <button
-                  onClick={() => {
-                    setMostrarDetalhes(false);
-                    setChamadoParaFinalizar(chamadoSelecionado);
-                    setMostrarModal(true);
-                  }}
-                  className="btn-finalizar-detalhe"
-                >
-                  Finalizar Agora
-                </button>
-              )}
+                {chamadoSelecionado?.status === "em atendimento" && (
+                  <button
+                    onClick={() => {
+                      setMostrarDetalhes(false);
+                      setChamadoParaFinalizar(chamadoSelecionado);
+                      setMostrarModal(true);
+                    }}
+                    className="btn-finalizar-detalhe"
+                    style={{ padding: "8px 15px", background: "#28a745" }}
+                  >
+                    Finalizar Agora
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -632,7 +602,7 @@ const PainelAnalista = () => {
                 value={motivoPendencia}
                 onChange={(e) => setMotivoPendencia(e.target.value)}
                 required
-                placeholder="Descreva o motivo da pendência..."
+                placeholder="Motivo da pendência..."
               />
               <div className="modal-footer-actions">
                 <button
