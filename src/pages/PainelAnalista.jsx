@@ -81,7 +81,8 @@ const PainelAnalista = () => {
 
   const formatarDataHora = (timestamp) => {
     if (!timestamp) return "---";
-    const date = timestamp.toDate();
+    // Verifica se é um timestamp do Firebase ou uma Date comum
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return date.toLocaleString("pt-BR", {
       day: "2-digit",
       month: "2-digit",
@@ -99,10 +100,9 @@ const PainelAnalista = () => {
   const handleBuscarEImprimir = (e) => {
     e.preventDefault();
     const termoLimpo = numeroOsBusca.replace(/[-\s]/g, "").trim();
-    const encontrado = chamados.find((c) => {
-      const osNoBancoLimpa = String(c.numeroOs).replace(/[-\s]/g, "").trim();
-      return osNoBancoLimpa === termoLimpo;
-    });
+    const encontrado = chamados.find(
+      (c) => String(c.numeroOs).replace(/[-\s]/g, "").trim() === termoLimpo
+    );
 
     if (encontrado) {
       setMostrarBuscaImpressao(false);
@@ -115,25 +115,16 @@ const PainelAnalista = () => {
 
   const podeAlterarChamado = (chamado) => {
     if (ehAdmin) return true;
-    if (!chamado.tecnicoResponsavel) return true;
-    if (chamado.tecnicoResponsavel === analistaNome) return true;
-    toast.error(
-      `Acesso negado! Este chamado pertence a: ${chamado.tecnicoResponsavel}`
-    );
+    if (
+      !chamado.tecnicoResponsavel ||
+      chamado.tecnicoResponsavel === analistaNome
+    )
+      return true;
+    toast.error(`Acesso negado! Técnico: ${chamado.tecnicoResponsavel}`);
     return false;
   };
 
   const handleAssumirChamado = async (chamado) => {
-    if (
-      chamado.tecnicoResponsavel &&
-      chamado.tecnicoResponsavel !== analistaNome &&
-      !ehAdmin
-    ) {
-      toast.error(
-        `Este chamado já está sendo atendido por ${chamado.tecnicoResponsavel}`
-      );
-      return;
-    }
     try {
       await updateDoc(doc(db, "chamados", chamado.id), {
         status: "em atendimento",
@@ -141,25 +132,18 @@ const PainelAnalista = () => {
         iniciadoEm: serverTimestamp(),
       });
       toast.info("Você assumiu o atendimento.");
-      setMostrarDetalhes(false);
     } catch {
       toast.error("Erro ao assumir chamado.");
     }
   };
 
   const handleDevolverChamado = async (chamado) => {
-    const ehDono = chamado.tecnicoResponsavel === analistaNome;
-    if (!ehDono && !ehAdmin) {
-      toast.error("Somente o técnico responsável ou ADM podem devolver!");
-      return;
-    }
+    if (!podeAlterarChamado(chamado)) return;
     try {
       await updateDoc(doc(db, "chamados", chamado.id), {
         status: "aberto",
         tecnicoResponsavel: null,
         iniciadoEm: null,
-        pausadoEm: null,
-        motivoPausa: null,
       });
       toast.success("Chamado devolvido para a fila.");
       setMostrarDetalhes(false);
@@ -180,7 +164,6 @@ const PainelAnalista = () => {
       toast.warning("SLA Pausado.");
       setMostrarModalPendencia(false);
       setMotivoPendencia("");
-      setMostrarDetalhes(false);
     } catch {
       toast.error("Erro ao pausar.");
     }
@@ -194,7 +177,6 @@ const PainelAnalista = () => {
         retomadoEm: serverTimestamp(),
       });
       toast.success("Atendimento retomado!");
-      setMostrarDetalhes(false);
     } catch {
       toast.error("Erro ao retomar.");
     }
@@ -202,13 +184,11 @@ const PainelAnalista = () => {
 
   const handleFinalizarChamado = async (e) => {
     e.preventDefault();
-    if (!podeAlterarChamado(chamadoParaFinalizar)) return;
     try {
       await updateDoc(doc(db, "chamados", chamadoParaFinalizar.id), {
         status: "fechado",
         feedbackAnalista: parecerTecnico,
         patrimonio: patrimonio.toUpperCase(),
-        tecnicoResponsavel: analistaNome,
         finalizadoEm: serverTimestamp(),
       });
       toast.success("Chamado finalizado!");
@@ -221,38 +201,58 @@ const PainelAnalista = () => {
   };
 
   const handleExportarELimpar = async () => {
+    const fechados = chamados.filter((c) => c.status === "fechado");
+    if (fechados.length === 0) {
+      toast.warning("Sem chamados fechados para exportar.");
+      setAguardandoConfirmacao(false);
+      return;
+    }
+
     try {
-      const chamadosFechados = chamados.filter((c) => c.status === "fechado");
-      if (chamadosFechados.length === 0) {
-        toast.warning("Sem chamados fechados.");
-        setAguardandoConfirmacao(false);
-        return;
-      }
-      const dados = chamadosFechados.map((c) => ({
-        OS: c.numeroOs,
-        Solicitante: c.nome,
-        Unidade: c.unidade,
-        Setor: c.setor || "N/A",
-        Status: c.status,
+      // MAPEAMENTO CORRIGIDO COM TODOS OS CAMPOS SOLICITADOS
+      const dadosExportacao = fechados.map((c) => ({
+        OS: c.numeroOs || "N/A",
+        Data: formatarDataHora(c.criadoEm),
+        Solicitante: c.nome || "N/A",
+        Unidade: c.unidade || "N/A",
+        Descricao: c.descricao || "N/A", // Puxa a descrição do relato
+        Status: "FECHADO",
         Patrimonio: c.patrimonio || "N/A",
-        Analista: c.tecnicoResponsavel || "",
+        Parecer_Tecnico: c.feedbackAnalista || "N/A", // Puxa o parecer preenchido no fechamento
+        Finalizado_Por: c.tecnicoResponsavel || "N/A", // Nome do analista
+        Finalizado_Em: formatarDataHora(c.finalizadoEm), // Data do fechamento
       }));
+
+      // 1. Enviar para o Google Sheets (Sheets)
       await fetch(WEB_APP_URL, {
         method: "POST",
         mode: "no-cors",
-        body: JSON.stringify({ tipo: "CHAMADOS_POWERBI", dados }),
+        header: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tipo: "CHAMADOS_POWERBI",
+          dados: dadosExportacao,
+        }),
       });
-      const ws = XLSX.utils.json_to_sheet(dados);
+
+      // 2. Gerar o Excel (Aba CHAMADOS)
+      const ws = XLSX.utils.json_to_sheet(dadosExportacao);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Chamados");
-      XLSX.writeFile(wb, `Relatorio.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, "CHAMADOS");
+      XLSX.writeFile(
+        wb,
+        `Relatorio_Finalizados_${new Date().toLocaleDateString()}.xlsx`
+      );
+
+      // 3. Limpar do Firebase após sucesso
       const batch = writeBatch(db);
-      chamadosFechados.forEach((c) => batch.delete(doc(db, "chamados", c.id)));
+      fechados.forEach((c) => batch.delete(doc(db, "chamados", c.id)));
       await batch.commit();
+
       setAguardandoConfirmacao(false);
-      toast.success("Exportado e limpo!");
-    } catch {
-      toast.error("Erro na exportação.");
+      toast.success("Dados exportados e banco de dados limpo!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro na exportação. Verifique o console.");
     }
   };
 
@@ -269,6 +269,7 @@ const PainelAnalista = () => {
             </Link>
           </div>
         </div>
+
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           <button
             onClick={() => setMostrarBuscaImpressao(true)}
@@ -421,7 +422,8 @@ const PainelAnalista = () => {
         </table>
       </div>
 
-      {/* MODAL BUSCA IMPRESSÃO */}
+      {/* --- MODAIS --- */}
+
       {mostrarBuscaImpressao && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: "400px" }}>
@@ -456,7 +458,6 @@ const PainelAnalista = () => {
         </div>
       )}
 
-      {/* MODAL DE DETALHES CORRIGIDO */}
       {mostrarDetalhes && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -470,26 +471,6 @@ const PainelAnalista = () => {
               </button>
             </div>
             <div className="detalhes-body">
-              {/* BOX DE PENDÊNCIA ESTILIZADO */}
-              {chamadoSelecionado?.status === "pendente" && (
-                <div
-                  style={{
-                    background: "#fff3cd",
-                    borderLeft: "5px solid #ffc107",
-                    padding: "10px",
-                    marginBottom: "15px",
-                    borderRadius: "4px",
-                  }}
-                >
-                  <strong style={{ color: "#856404" }}>
-                    Motivo da Pendência:
-                  </strong>
-                  <p style={{ margin: "5px 0 0", fontSize: "0.9rem" }}>
-                    {chamadoSelecionado?.motivoPausa || "Não informado"}
-                  </p>
-                </div>
-              )}
-
               <div className="info-grid">
                 <p>
                   <strong>Solicitante:</strong> {chamadoSelecionado?.nome}
@@ -504,14 +485,6 @@ const PainelAnalista = () => {
                   </span>
                 </p>
                 <p>
-                  <strong>Status:</strong>{" "}
-                  <span
-                    className={`status-badge ${chamadoSelecionado?.status}`}
-                  >
-                    {chamadoSelecionado?.status?.toUpperCase()}
-                  </span>
-                </p>
-                <p>
                   <strong>Técnico:</strong>{" "}
                   {chamadoSelecionado?.tecnicoResponsavel || "Aguardando"}
                 </p>
@@ -522,76 +495,16 @@ const PainelAnalista = () => {
                 {chamadoSelecionado?.descricao}
               </div>
             </div>
-
-            {/* RODAPÉ DO MODAL COM FLEXBOX PARA BOTÕES LADO A LADO */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginTop: "20px",
-                paddingTop: "15px",
-                borderTop: "1px solid #eee",
-              }}
+            <button
+              onClick={() => setMostrarDetalhes(false)}
+              className="btn-voltar"
             >
-              <button
-                onClick={() => setMostrarDetalhes(false)}
-                className="btn-voltar"
-              >
-                Fechar
-              </button>
-
-              <div style={{ display: "flex", gap: "10px" }}>
-                {(chamadoSelecionado?.status === "em atendimento" ||
-                  chamadoSelecionado?.status === "pendente") &&
-                  (chamadoSelecionado?.tecnicoResponsavel === analistaNome ||
-                    ehAdmin) && (
-                    <button
-                      onClick={() => handleDevolverChamado(chamadoSelecionado)}
-                      className="btn-devolver-modal"
-                      style={{
-                        background: "#6c757d",
-                        color: "white",
-                        border: "none",
-                        padding: "8px 15px",
-                        borderRadius: "4px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "5px",
-                      }}
-                    >
-                      <FiArrowLeftCircle /> Devolver
-                    </button>
-                  )}
-                {chamadoSelecionado?.status === "pendente" && (
-                  <button
-                    onClick={() => handleRetomarChamado(chamadoSelecionado)}
-                    className="btn-retomar"
-                    style={{ padding: "8px 15px" }}
-                  >
-                    <FiPlayCircle /> Retomar
-                  </button>
-                )}
-                {chamadoSelecionado?.status === "em atendimento" && (
-                  <button
-                    onClick={() => {
-                      setMostrarDetalhes(false);
-                      setChamadoParaFinalizar(chamadoSelecionado);
-                      setMostrarModal(true);
-                    }}
-                    className="btn-finalizar-detalhe"
-                    style={{ padding: "8px 15px", background: "#28a745" }}
-                  >
-                    Finalizar Agora
-                  </button>
-                )}
-              </div>
-            </div>
+              Fechar
+            </button>
           </div>
         </div>
       )}
 
-      {/* MODAL PENDÊNCIA */}
       {mostrarModalPendencia && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -621,7 +534,6 @@ const PainelAnalista = () => {
         </div>
       )}
 
-      {/* MODAL FINALIZAR */}
       {mostrarModal && (
         <div className="modal-overlay">
           <div className="modal-content">
