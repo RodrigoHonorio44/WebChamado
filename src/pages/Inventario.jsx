@@ -32,12 +32,10 @@ const Inventario = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [buscando, setBuscando] = useState(false);
 
-  // Estados dos Filtros
   const [unidadeFiltro, setUnidadeFiltro] = useState("Todas");
   const [statusFiltro, setStatusFiltro] = useState("Ativo");
   const [buscaPatrimonio, setBuscaPatrimonio] = useState("");
 
-  // Paginação
   const [paginaAtual, setPaginaAtual] = useState(1);
   const itensPorPagina = 15;
 
@@ -90,7 +88,7 @@ const Inventario = () => {
   const carregarDados = async (e) => {
     if (e) e.preventDefault();
     setBuscando(true);
-    setPaginaAtual(1); // Volta para a primeira página ao buscar
+    setPaginaAtual(1);
     try {
       const querySnapshot = await getDocs(collection(db, "ativos"));
       const todosOsDados = querySnapshot.docs.map((doc) => ({
@@ -106,50 +104,96 @@ const Inventario = () => {
     }
   };
 
-  // BOTÃO LIMPAR CORRIGIDO
   const limparFiltros = () => {
     setBuscaPatrimonio("");
     setUnidadeFiltro("Todas");
     setStatusFiltro("Ativo");
-    setItens([]); // Esvazia a lista na tela
+    setItens([]);
     setPaginaAtual(1);
-    toast.info("Filtros e busca zerados.");
+    toast.info("Filtros zerados.");
   };
 
-  // Lógica de Filtragem
   const itensFiltrados = itens.filter((item) => {
     const unidadeItemNorm = normalizarParaComparacao(item.unidade);
     const unidadeSelecionadaNorm = normalizarParaComparacao(unidadeFiltro);
-
     const matchUnidade =
       unidadeFiltro === "Todas" ||
       unidadeItemNorm.includes(unidadeSelecionadaNorm) ||
       unidadeSelecionadaNorm.includes(unidadeItemNorm);
-
     const matchStatus =
       statusFiltro === "Todos" || item.status === statusFiltro;
-
     let matchBusca = true;
     if (buscaPatrimonio.trim() !== "") {
       const termoNorm = normalizarParaComparacao(buscaPatrimonio);
       const patItemNorm = normalizarParaComparacao(item.patrimonio);
       const nomeItemNorm = normalizarParaComparacao(item.nome);
-
-      if (termoNorm === "sp") {
-        matchBusca = patItemNorm === "sp";
-      } else {
-        matchBusca =
-          patItemNorm.includes(termoNorm) || nomeItemNorm.includes(termoNorm);
-      }
+      matchBusca =
+        termoNorm === "sp"
+          ? patItemNorm === "sp"
+          : patItemNorm.includes(termoNorm) || nomeItemNorm.includes(termoNorm);
     }
-
     return matchUnidade && matchStatus && matchBusca;
   });
 
-  // Lógica de Paginação
   const totalPaginas = Math.ceil(itensFiltrados.length / itensPorPagina);
   const inicio = (paginaAtual - 1) * itensPorPagina;
   const itensExibidos = itensFiltrados.slice(inicio, inicio + itensPorPagina);
+
+  // FUNÇÃO DE DATA ATUALIZADA PARA INCLUIR HORA E MINUTOS
+  const formatarDataBR = (timestamp) => {
+    if (!timestamp) return "---";
+    const data = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+
+    return data.toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const exportarExcelCompleto = async (e) => {
+    if (e) e.preventDefault();
+
+    if (itensFiltrados.length === 0)
+      return toast.error("Não há dados filtrados para exportar.");
+
+    toast.info(
+      `Sincronizando ${itensFiltrados.length} itens com Google Sheets...`
+    );
+
+    try {
+      const dadosParaEnviar = itensFiltrados.map((i) => ({
+        patrimonio: i.patrimonio.toString().trim(),
+        nome: i.nome,
+        unidade: i.unidade || "",
+        setor: i.setor || "",
+        estado: i.estado || "Bom",
+        quantidade: i.quantidade || 1,
+        observacoes: i.observacoes || "",
+        status: i.status,
+        dataBaixa: i.dataBaixa ? formatarDataBR(i.dataBaixa) : "",
+      }));
+
+      await fetch(WEBAPP_URL_SHEETS, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dadosParaEnviar),
+      });
+
+      toast.success("Planilha Google atualizada com sucesso!");
+
+      const ws = XLSX.utils.json_to_sheet(dadosParaEnviar);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Inventario");
+      const nomeArquivo = `Inventario_${unidadeFiltro.replace(" ", "_")}.xlsx`;
+      XLSX.writeFile(wb, nomeArquivo);
+    } catch (error) {
+      toast.error("Erro na comunicação com o Sheets.");
+    }
+  };
 
   const abrirModalConfirmacao = (id, nome) =>
     setModalBaixa({ aberto: true, id, nome });
@@ -168,22 +212,6 @@ const Inventario = () => {
     } catch (error) {
       toast.error("Erro ao baixar.");
     }
-  };
-
-  const formatarData = (timestamp) => {
-    if (!timestamp) return "---";
-    const data = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return data.toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
-
-  const exportarExcelCompleto = async () => {
-    if (itens.length === 0) return toast.error("Consulte os dados primeiro.");
-    toast.info("Exportando...");
-    // ... lógica de exportação mantida
   };
 
   if (loading) return <div className="loading">Carregando...</div>;
@@ -214,6 +242,7 @@ const Inventario = () => {
               <option value="Inoã">UPA Inoã</option>
               <option value="Barroco">SAMU Barroco</option>
               <option value="Ponta Negra">SAMU Ponta Negra</option>
+              <option value="Centro">SAMU Centro</option>
             </select>
           </div>
 
@@ -237,7 +266,7 @@ const Inventario = () => {
               value={buscaPatrimonio}
               onChange={(e) => {
                 setBuscaPatrimonio(e.target.value);
-                setPaginaAtual(1); // Reseta página ao digitar
+                setPaginaAtual(1);
               }}
             />
           </div>
@@ -268,7 +297,7 @@ const Inventario = () => {
               className="btn-excel"
               onClick={exportarExcelCompleto}
             >
-              <FiCloudLightning /> Excel
+              <FiCloudLightning /> Atualizar Planilha
             </button>
           </div>
         </div>
@@ -310,7 +339,17 @@ const Inventario = () => {
                       Baixar
                     </button>
                   ) : (
-                    <small>Baixado em {formatarData(item.dataBaixa)}</small>
+                    <small
+                      style={{
+                        display: "block",
+                        fontSize: "11px",
+                        lineHeight: "1.2",
+                      }}
+                    >
+                      Baixado em:
+                      <br />
+                      <strong>{formatarDataBR(item.dataBaixa)}</strong>
+                    </small>
                   )}
                 </td>
               </tr>
@@ -318,7 +357,6 @@ const Inventario = () => {
           </tbody>
         </table>
 
-        {/* CONTROLES DE PAGINAÇÃO */}
         {itensFiltrados.length > itensPorPagina && (
           <div
             className="pagination-container"
