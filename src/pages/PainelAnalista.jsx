@@ -23,6 +23,9 @@ import {
   FiCheck,
   FiSearch,
   FiArrowLeftCircle,
+  FiAlertCircle,
+  FiChevronLeft,
+  FiChevronRight,
 } from "react-icons/fi";
 import "../styles/PainelAnalista.css";
 
@@ -34,6 +37,10 @@ const PainelAnalista = () => {
   const [chamados, setChamados] = useState([]);
   const [loading, setLoading] = useState(true);
   const [aguardandoConfirmacao, setAguardandoConfirmacao] = useState(false);
+
+  // Estados para Paginação
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const chamadosPorPagina = 10;
 
   // Modais
   const [mostrarModal, setMostrarModal] = useState(false);
@@ -71,6 +78,15 @@ const PainelAnalista = () => {
     return () => unsubscribe();
   }, []);
 
+  // Lógica de Paginação
+  const indiceUltimoChamado = paginaAtual * chamadosPorPagina;
+  const indicePrimeiroChamado = indiceUltimoChamado - chamadosPorPagina;
+  const chamadosExibidos = chamados.slice(
+    indicePrimeiroChamado,
+    indiceUltimoChamado
+  );
+  const totalPaginas = Math.ceil(chamados.length / chamadosPorPagina);
+
   const stats = {
     total: chamados.length,
     abertos: chamados.filter((c) => c.status === "aberto").length,
@@ -81,7 +97,6 @@ const PainelAnalista = () => {
 
   const formatarDataHora = (timestamp) => {
     if (!timestamp) return "---";
-    // Verifica se é um timestamp do Firebase ou uma Date comum
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return date.toLocaleString("pt-BR", {
       day: "2-digit",
@@ -97,31 +112,20 @@ const PainelAnalista = () => {
     return texto.length > limite ? texto.substring(0, limite) + "..." : texto;
   };
 
-  const handleBuscarEImprimir = (e) => {
+  const handleColocarPendente = async (e) => {
     e.preventDefault();
-    const termoLimpo = numeroOsBusca.replace(/[-\s]/g, "").trim();
-    const encontrado = chamados.find(
-      (c) => String(c.numeroOs).replace(/[-\s]/g, "").trim() === termoLimpo
-    );
-
-    if (encontrado) {
-      setMostrarBuscaImpressao(false);
-      setNumeroOsBusca("");
-      navigate(`/imprimir-os/${encontrado.id}`);
-    } else {
-      toast.error(`OS ${numeroOsBusca} não encontrada!`);
+    try {
+      await updateDoc(doc(db, "chamados", chamadoParaPendente.id), {
+        status: "pendente",
+        motivoPausa: motivoPendencia,
+        pausadoEm: serverTimestamp(),
+      });
+      toast.warning("SLA Pausado.");
+      setMostrarModalPendencia(false);
+      setMotivoPendencia("");
+    } catch {
+      toast.error("Erro ao pausar.");
     }
-  };
-
-  const podeAlterarChamado = (chamado) => {
-    if (ehAdmin) return true;
-    if (
-      !chamado.tecnicoResponsavel ||
-      chamado.tecnicoResponsavel === analistaNome
-    )
-      return true;
-    toast.error(`Acesso negado! Técnico: ${chamado.tecnicoResponsavel}`);
-    return false;
   };
 
   const handleAssumirChamado = async (chamado) => {
@@ -137,40 +141,7 @@ const PainelAnalista = () => {
     }
   };
 
-  const handleDevolverChamado = async (chamado) => {
-    if (!podeAlterarChamado(chamado)) return;
-    try {
-      await updateDoc(doc(db, "chamados", chamado.id), {
-        status: "aberto",
-        tecnicoResponsavel: null,
-        iniciadoEm: null,
-      });
-      toast.success("Chamado devolvido para a fila.");
-      setMostrarDetalhes(false);
-    } catch {
-      toast.error("Erro ao devolver.");
-    }
-  };
-
-  const handleColocarPendente = async (e) => {
-    e.preventDefault();
-    if (!podeAlterarChamado(chamadoParaPendente)) return;
-    try {
-      await updateDoc(doc(db, "chamados", chamadoParaPendente.id), {
-        status: "pendente",
-        motivoPausa: motivoPendencia,
-        pausadoEm: serverTimestamp(),
-      });
-      toast.warning("SLA Pausado.");
-      setMostrarModalPendencia(false);
-      setMotivoPendencia("");
-    } catch {
-      toast.error("Erro ao pausar.");
-    }
-  };
-
   const handleRetomarChamado = async (chamado) => {
-    if (!podeAlterarChamado(chamado)) return;
     try {
       await updateDoc(doc(db, "chamados", chamado.id), {
         status: "em atendimento",
@@ -200,6 +171,36 @@ const PainelAnalista = () => {
     }
   };
 
+  const handleDevolverChamado = async (chamado) => {
+    try {
+      await updateDoc(doc(db, "chamados", chamado.id), {
+        status: "aberto",
+        tecnicoResponsavel: null,
+        iniciadoEm: null,
+      });
+      toast.success("Chamado devolvido para a fila.");
+      setMostrarDetalhes(false);
+    } catch {
+      toast.error("Erro ao devolver.");
+    }
+  };
+
+  const handleBuscarEImprimir = (e) => {
+    e.preventDefault();
+    const termoLimpo = numeroOsBusca.replace(/[-\s]/g, "").trim();
+    const encontrado = chamados.find(
+      (c) => String(c.numeroOs).replace(/[-\s]/g, "").trim() === termoLimpo
+    );
+
+    if (encontrado) {
+      setMostrarBuscaImpressao(false);
+      setNumeroOsBusca("");
+      navigate(`/imprimir-os/${encontrado.id}`);
+    } else {
+      toast.error(`OS ${numeroOsBusca} não encontrada!`);
+    }
+  };
+
   const handleExportarELimpar = async () => {
     const fechados = chamados.filter((c) => c.status === "fechado");
     if (fechados.length === 0) {
@@ -207,23 +208,20 @@ const PainelAnalista = () => {
       setAguardandoConfirmacao(false);
       return;
     }
-
     try {
-      // MAPEAMENTO CORRIGIDO COM TODOS OS CAMPOS SOLICITADOS
       const dadosExportacao = fechados.map((c) => ({
         OS: c.numeroOs || "N/A",
         Data: formatarDataHora(c.criadoEm),
         Solicitante: c.nome || "N/A",
         Unidade: c.unidade || "N/A",
-        Descricao: c.descricao || "N/A", // Puxa a descrição do relato
+        Descricao: c.descricao || "N/A",
         Status: "FECHADO",
         Patrimonio: c.patrimonio || "N/A",
-        Parecer_Tecnico: c.feedbackAnalista || "N/A", // Puxa o parecer preenchido no fechamento
-        Finalizado_Por: c.tecnicoResponsavel || "N/A", // Nome do analista
-        Finalizado_Em: formatarDataHora(c.finalizadoEm), // Data do fechamento
+        Parecer_Tecnico: c.feedbackAnalista || "N/A",
+        Finalizado_Por: c.tecnicoResponsavel || "N/A",
+        Finalizado_Em: formatarDataHora(c.finalizadoEm),
       }));
 
-      // 1. Enviar para o Google Sheets (Sheets)
       await fetch(WEB_APP_URL, {
         method: "POST",
         mode: "no-cors",
@@ -234,7 +232,6 @@ const PainelAnalista = () => {
         }),
       });
 
-      // 2. Gerar o Excel (Aba CHAMADOS)
       const ws = XLSX.utils.json_to_sheet(dadosExportacao);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "CHAMADOS");
@@ -243,7 +240,6 @@ const PainelAnalista = () => {
         `Relatorio_Finalizados_${new Date().toLocaleDateString()}.xlsx`
       );
 
-      // 3. Limpar do Firebase após sucesso
       const batch = writeBatch(db);
       fechados.forEach((c) => batch.delete(doc(db, "chamados", c.id)));
       await batch.commit();
@@ -251,8 +247,7 @@ const PainelAnalista = () => {
       setAguardandoConfirmacao(false);
       toast.success("Dados exportados e banco de dados limpo!");
     } catch (error) {
-      console.error(error);
-      toast.error("Erro na exportação. Verifique o console.");
+      toast.error("Erro na exportação.");
     }
   };
 
@@ -332,7 +327,7 @@ const PainelAnalista = () => {
                 <td colSpan="6">Carregando...</td>
               </tr>
             ) : (
-              chamados.map((item) => (
+              chamadosExibidos.map((item) => (
                 <tr
                   key={item.id}
                   onClick={() => {
@@ -422,8 +417,146 @@ const PainelAnalista = () => {
         </table>
       </div>
 
+      {/* CONTROLES DE PAGINAÇÃO */}
+      {!loading && totalPaginas > 1 && (
+        <div className="pagination-container">
+          <button
+            disabled={paginaAtual === 1}
+            onClick={() => setPaginaAtual((prev) => prev - 1)}
+            className="btn-pagination"
+          >
+            <FiChevronLeft /> Anterior
+          </button>
+          <span className="page-info">
+            Página <strong>{paginaAtual}</strong> de {totalPaginas}
+          </span>
+          <button
+            disabled={paginaAtual === totalPaginas}
+            onClick={() => setPaginaAtual((prev) => prev + 1)}
+            className="btn-pagination"
+          >
+            Próximo <FiChevronRight />
+          </button>
+        </div>
+      )}
+
       {/* --- MODAIS --- */}
 
+      {mostrarDetalhes && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Chamado #{chamadoSelecionado?.numeroOs}</h2>
+              <button
+                onClick={() => setMostrarDetalhes(false)}
+                className="btn-close-modal"
+              >
+                <FiX />
+              </button>
+            </div>
+            <div
+              className="detalhes-body"
+              style={{ maxHeight: "70vh", overflowY: "auto" }}
+            >
+              {/* SEÇÃO DA JUSTIFICATIVA DE PAUSA (ADICIONADA AQUI) */}
+              {chamadoSelecionado?.status === "pendente" && (
+                <div className="alerta-pendencia-analista">
+                  <div className="alerta-header">
+                    <FiAlertCircle size={20} />
+                    <strong>SLA PAUSADO</strong>
+                  </div>
+                  <p>
+                    <strong>Motivo:</strong>{" "}
+                    {chamadoSelecionado?.motivoPausa || "Não informado"}
+                  </p>
+                  <small>
+                    Pausado em:{" "}
+                    {formatarDataHora(chamadoSelecionado?.pausadoEm)}
+                  </small>
+                </div>
+              )}
+
+              <div className="info-grid">
+                <p>
+                  <strong>Solicitante:</strong> {chamadoSelecionado?.nome}
+                </p>
+                <p>
+                  <strong>Unidade:</strong> {chamadoSelecionado?.unidade}
+                </p>
+                <p>
+                  <strong>Setor:</strong>{" "}
+                  <span className="text-blue-bold">
+                    {chamadoSelecionado?.setor || "Geral"}
+                  </span>
+                </p>
+                <p>
+                  <strong>Técnico:</strong>{" "}
+                  {chamadoSelecionado?.tecnicoResponsavel || "Aguardando"}
+                </p>
+              </div>
+              <hr />
+              <h3>Descrição do Usuário</h3>
+              <div className="descricao-box-full">
+                {chamadoSelecionado?.descricao}
+              </div>
+
+              {chamadoSelecionado?.feedbackAnalista && (
+                <>
+                  <hr />
+                  <h3>Parecer Técnico</h3>
+                  <div
+                    className="descricao-box-full"
+                    style={{ borderLeftColor: "#28a745" }}
+                  >
+                    {chamadoSelecionado?.feedbackAnalista}
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button
+                onClick={() => setMostrarDetalhes(false)}
+                className="btn-voltar"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PENDÊNCIA */}
+      {mostrarModalPendencia && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Pausar SLA</h2>
+            <form onSubmit={handleColocarPendente}>
+              <label>Justificativa da Pausa</label>
+              <textarea
+                className="form-input"
+                value={motivoPendencia}
+                onChange={(e) => setMotivoPendencia(e.target.value)}
+                required
+                placeholder="Explique por que o atendimento está parado (ex: Aguardando peça, aguardando usuário...)"
+              />
+              <div className="modal-footer-actions">
+                <button
+                  type="button"
+                  onClick={() => setMostrarModalPendencia(false)}
+                  className="btn-voltar"
+                >
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-salvar-modern">
+                  Confirmar Pausa
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Outros modais permanecem iguais... */}
       {mostrarBuscaImpressao && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: "400px" }}>
@@ -453,82 +586,6 @@ const PainelAnalista = () => {
               >
                 <FiSearch /> Buscar
               </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {mostrarDetalhes && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h2>Chamado #{chamadoSelecionado?.numeroOs}</h2>
-              <button
-                onClick={() => setMostrarDetalhes(false)}
-                className="btn-close-modal"
-              >
-                <FiX />
-              </button>
-            </div>
-            <div className="detalhes-body">
-              <div className="info-grid">
-                <p>
-                  <strong>Solicitante:</strong> {chamadoSelecionado?.nome}
-                </p>
-                <p>
-                  <strong>Unidade:</strong> {chamadoSelecionado?.unidade}
-                </p>
-                <p>
-                  <strong>Setor:</strong>{" "}
-                  <span className="text-blue-bold">
-                    {chamadoSelecionado?.setor || "Geral"}
-                  </span>
-                </p>
-                <p>
-                  <strong>Técnico:</strong>{" "}
-                  {chamadoSelecionado?.tecnicoResponsavel || "Aguardando"}
-                </p>
-              </div>
-              <hr />
-              <h3>Descrição do Usuário</h3>
-              <div className="descricao-box-full">
-                {chamadoSelecionado?.descricao}
-              </div>
-            </div>
-            <button
-              onClick={() => setMostrarDetalhes(false)}
-              className="btn-voltar"
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
-      )}
-
-      {mostrarModalPendencia && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>Pausar SLA</h2>
-            <form onSubmit={handleColocarPendente}>
-              <textarea
-                className="form-input"
-                value={motivoPendencia}
-                onChange={(e) => setMotivoPendencia(e.target.value)}
-                required
-                placeholder="Motivo da pendência..."
-              />
-              <div className="modal-footer-actions">
-                <button
-                  type="button"
-                  onClick={() => setMostrarModalPendencia(false)}
-                  className="btn-voltar"
-                >
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-salvar-modern">
-                  Confirmar Pausa
-                </button>
-              </div>
             </form>
           </div>
         </div>
